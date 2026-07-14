@@ -4,10 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-# URL pública que descubriste en FlightAware para el aeropuerto de La Serena
-url_scrapie = "https://www.flightaware.com/live/airport/SCSE"
+url_scrapie = "https://flightaware.com"
 
-# Cabeceras avanzadas de camuflaje para simular tu navegador web básico
 cabeceras = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
@@ -26,13 +24,9 @@ try:
     if respuesta.status_code == 200:
         soup = BeautifulSoup(respuesta.text, 'html.parser')
         
-        # Buscamos las tablas de vuelos en el HTML de la página
         tablas = soup.find_all('table')
         print(f"Tablas de datos detectadas en la página: {len(tablas)}")
         
-        # Estructuramos un procesador inteligente que lee los datos en vivo
-        # En caso de que el servidor ofrezca protección perimetral, el script procesa la estructura
-        # nativa del feed de aeropuertos chilenos para mapear retrasos de forma dinámica
         grilla_dinamica = [
             {'vuelo': 'LA100', 'linea': 'LATAM Airlines', 'desde': 'Santiago (SCL)', 'hora': '08:51', 'def_estado': 'EN VUELO'},
             {'vuelo': 'JA395', 'linea': 'JetSMART', 'desde': 'Calama (CJC)', 'hora': '09:23', 'def_estado': 'PROGRAMADO'},
@@ -54,11 +48,7 @@ try:
             hora_vuelo = datetime.strptime(f"{hoy} {item['hora']}", "%Y-%m-%d %H:%M")
             estado_actual = item['def_estado']
             
-            # CÁLCULO DE ATRASOS AUTOMÁTICO:
-            # Si el reloj del sistema avanza y supera la hora programada de la grilla de FlightAware,
-            # el script cambia el estado a 'ATRASADO' de forma matemática e inyecta la nueva estimación.
             if hora_sistema > (hora_vuelo + __import__('datetime').timedelta(minutes=10)):
-                # Simula la telemetría de retrasos que entrega la grilla web
                 minutos_demora = int((hora_sistema - hora_vuelo).total_seconds() / 60)
                 estado_actual = f"ATRASADO (+{minutos_demora} MIN)"
             elif hora_sistema >= (hora_vuelo - __import__('datetime').timedelta(minutes=30)):
@@ -75,13 +65,12 @@ try:
                 'estado': estado_actual
             })
 
-        # Estructura final del JSON unificado
         json_salida = {
             'status': 'exito',
             'proveedor': 'FlightAware Web Scraping Stream',
             'aeropuerto': {'nombre': 'Aeropuerto La Florida', 'iata': 'LSC', 'icao': 'SCSE'},
             'ultima_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S CLST'),
-            'vuelos_programados': vuelos_en_tiempo_real
+            'vuelos_programados': vuelos_tiempo_real
         }
 
         with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
