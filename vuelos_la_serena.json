@@ -1,1 +1,4 @@
-{}
+{
+    "status": "error_servidor",
+    "respuesta": "\n\n\n<!DOCTYPE html>\n<html class=\"aviationstack index\" lang=\"en\">\n   <head>\n\n      <meta charset=\"utf-8\">\n      <title>Aviationstack: Real-Time Flight Tracker API - Free Flight APIs</title>\n\n\t  \n\t  <!-- Google Tag Manager -->\n<script>\n\t(function(w, d, s, l, i) {\n\t\tw[l] = w[l] || [];\n\t\tw[l].push({\n\t\t\t'gtm.start': new Date().getTime(),\n\t\t\tevent: 'gtm.js'\n\t\t});\n\t\tvar f = d.getElementsByTagName(s)[0],\n\t\t\tj = d.createElement(s),\n\t\t\tdl = l != 'dataLayer' ? '&l=' + l : '';\n\t\tj.async = true;\n\t\tj.src =\n\t\t\t"
+}
