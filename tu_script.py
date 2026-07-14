@@ -13,8 +13,8 @@ if not API_KEY:
     print("Error: No se encontró la API Key en las variables de entorno.")
     exit(1)
 
-# URL para obtener vuelos que salen (departures) desde La Serena
-url = f"http://aviationstack.com{API_KEY}&dep_iata={AIRPORT_IATA}"
+# URL CORRECTA: Incluye ://aviationstack.com
+url = f"http://://aviationstack.com?access_key={API_KEY}&dep_iata={AIRPORT_IATA}"
 
 try:
     response = requests.get(url)
