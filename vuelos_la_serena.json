@@ -1,11 +1,11 @@
 {
     "status": "vacio",
-    "proveedor": "FlightAware Live HTML Stream",
+    "proveedor": "FlightAware EnRoute HTML Stream",
     "aeropuerto": {
         "nombre": "Aeropuerto La Florida",
         "iata": "LSC",
         "icao": "SCSE"
     },
-    "ultima_actualizacion": "2026-07-14 06:10:57 CLST",
+    "ultima_actualizacion": "2026-07-14 06:15:25 CLST",
     "vuelos_programados": []
 }
