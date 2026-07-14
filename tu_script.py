@@ -13,8 +13,8 @@ if not API_KEY:
     print("Error: No se encontró la API Key en las variables de entorno.")
     exit(1)
 
-# URL CORRECTA: Incluye ://aviationstack.com
-url = f"http://://aviationstack.com?access_key={API_KEY}&dep_iata={AIRPORT_IATA}"
+# URL Corregida sin duplicaciones de protocolo ni de barras
+url = f"http://aviationstack.com{API_KEY}&dep_iata={AIRPORT_IATA}"
 
 try:
     response = requests.get(url)
