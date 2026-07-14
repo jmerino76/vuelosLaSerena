@@ -1,4 +1,5 @@
 {
-    "status": "servidor_espera",
-    "codigo": 404
+    "status": "sin_datos_recientes",
+    "codigo": 403,
+    "detalle": "Intenta ampliando el rango o cambiando de API"
 }
