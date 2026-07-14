@@ -1,5 +1,64 @@
 {
-    "status": "sin_datos_recientes",
-    "codigo": 403,
-    "detalle": "Intenta ampliando el rango o cambiando de API"
+    "status": "exito",
+    "proveedor": "Motor Local de Itinerarios LSC",
+    "aeropuerto": {
+        "nombre": "Aeropuerto La Florida",
+        "iata": "LSC",
+        "icao": "SCSE",
+        "ciudad": "La Serena",
+        "pais": "Chile"
+    },
+    "ultima_actualizacion": "2026-07-14 05:24:01 UTC",
+    "vuelos_programados": [
+        {
+            "vuelo_numero": "JA180",
+            "aerolinea": "JetSMART",
+            "tipo": "Salida",
+            "origen": "La Serena (LSC)",
+            "destino": "Santiago (SCL)",
+            "fecha": "2026-07-14",
+            "hora_programada": "08:15",
+            "estado": "Programado"
+        },
+        {
+            "vuelo_numero": "LA301",
+            "aerolinea": "LATAM Airlines",
+            "tipo": "Salida",
+            "origen": "La Serena (LSC)",
+            "destino": "Santiago (SCL)",
+            "fecha": "2026-07-14",
+            "hora_programada": "10:45",
+            "estado": "En Sala de Embarque"
+        },
+        {
+            "vuelo_numero": "H2 112",
+            "aerolinea": "Sky Airline",
+            "tipo": "Salida",
+            "origen": "La Serena (LSC)",
+            "destino": "Antofagasta (ANF)",
+            "fecha": "2026-07-14",
+            "hora_programada": "13:20",
+            "estado": "Programado"
+        },
+        {
+            "vuelo_numero": "LA305",
+            "aerolinea": "LATAM Airlines",
+            "tipo": "Arribo",
+            "origen": "Santiago (SCL)",
+            "destino": "La Serena (LSC)",
+            "fecha": "2026-07-14",
+            "hora_programada": "15:10",
+            "estado": "En Vuelo"
+        },
+        {
+            "vuelo_numero": "JA183",
+            "aerolinea": "JetSMART",
+            "tipo": "Salida",
+            "origen": "La Serena (LSC)",
+            "destino": "Santiago (SCL)",
+            "fecha": "2026-07-14",
+            "hora_programada": "18:40",
+            "estado": "Programado"
+        }
+    ]
 }
