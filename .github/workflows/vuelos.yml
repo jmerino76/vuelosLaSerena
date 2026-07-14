@@ -2,8 +2,8 @@ name: Actualizar Vuelos La Serena Realtime
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # Ejecución automática cada 15 minutos
-  workflow_dispatch: # Permite ejecución manual rápida
+    - cron: '*/15 * * * *' # El robot de GitHub correrá solo cada 15 minutos de forma perpetua
+  workflow_dispatch: # Permite que lo pruebes manualmente cuando quieras
 
 jobs:
   run-script:
@@ -21,16 +21,16 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Instalar Dependencias de Red
+    - name: Instalar Dependencias de Extracción
       run: |
         python -m pip install --upgrade pip
-        pip install requests
+        pip install requests beautifulsoup4
 
-    - name: Ejecutar Radar Geográfico ADS-B
+    - name: Ejecutar Extractor Automatizado FlightAware
       run: python tu_script.py
 
     - name: Auto-guardar cambios en GitHub
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "✈️ Radar ADS-B actualizado con vuelos extras detectados"
+        commit_message: "✈️ Sincronización automática de retrasos desde FlightAware"
         file_pattern: 'vuelos_la_serena.json'
