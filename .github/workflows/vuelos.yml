@@ -1,0 +1,71 @@
+name: Actualizar Vuelos La Serena
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # Todos los días a las 08:00 UTC
+  workflow_dispatch: # Permite ejecución manual
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Descargar repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Ejecutar Script de Vuelos (OpenSky Seguro)
+      run: |
+        python -c "
+        import json
+        import requests
+        import time
+
+        # Separamos estrictamente la dirección de internet para evitar errores de caché
+        host_web = 'https://opensky-network.org'
+        ruta_api = '/api/flights/departure'
+        
+        ahora = int(time.time())
+        hace_24h = ahora - 86400
+
+        # Unimos las piezas de forma nativa en Python
+        url_limpia = f'{host_web}{ruta_api}?airport=SCSE&begin={hace_24h}&end={ahora}'
+
+        try:
+            print('Iniciando conexion limpia hacia OpenSky Network...')
+            response = requests.get(url_limpia)
+            print(f'Codigo de respuesta HTTP: {response.status_code}')
+            
+            if response.status_code == 200:
+                vuelos = response.json()
+                print(f'Exito: Se procesaron {len(vuelos)} vuelos.')
+                
+                with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
+                    json.dump({'proveedor': 'OpenSky Network', 'aeropuerto': 'La Serena (SCSE)', 'vuelos_24h': vuelos}, f, indent=4)
+                print('Archivo vuelos_la_serena.json modificado con exito.')
+            else:
+                print(f'El servidor respondio con codigo: {response.status_code}')
+                with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
+                    json.dump({'status': 'servidor_espera', 'codigo': response.status_code}, f, indent=4)
+        except Exception as error:
+            print(f'Error critico de red: {error}')
+            exit(1)
+        "
+
+    - name: Auto-guardar cambios en GitHub
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "🤖 Actualización automática de vuelos LSC (OpenSky)"
+        file_pattern: 'vuelos_la_serena.json'
