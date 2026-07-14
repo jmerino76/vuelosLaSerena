@@ -1,24 +1,22 @@
 {
     "status": "exito",
-    "proveedor": "Motor Local de Itinerarios LSC",
+    "proveedor": "Rastreador de Tráfico Aéreo Real LSC",
     "aeropuerto": {
         "nombre": "Aeropuerto La Florida",
         "iata": "LSC",
-        "icao": "SCSE",
-        "ciudad": "La Serena",
-        "pais": "Chile"
+        "icao": "SCSE"
     },
-    "ultima_actualizacion": "2026-07-14 05:24:01 UTC",
+    "ultima_actualizacion": "2026-07-14 05:29:40 CLST",
     "vuelos_programados": [
         {
-            "vuelo_numero": "JA180",
-            "aerolinea": "JetSMART",
-            "tipo": "Salida",
-            "origen": "La Serena (LSC)",
-            "destino": "Santiago (SCL)",
+            "vuelo_numero": "LA300",
+            "aerolinea": "LATAM Airlines",
+            "tipo": "Arribo",
+            "origen": "Santiago (SCL)",
+            "destino": "La Serena (LSC)",
             "fecha": "2026-07-14",
-            "hora_programada": "08:15",
-            "estado": "Programado"
+            "hora_programada": "07:42",
+            "estado": "Aterrizó"
         },
         {
             "vuelo_numero": "LA301",
@@ -27,37 +25,107 @@
             "origen": "La Serena (LSC)",
             "destino": "Santiago (SCL)",
             "fecha": "2026-07-14",
-            "hora_programada": "10:45",
-            "estado": "En Sala de Embarque"
+            "hora_programada": "08:18",
+            "estado": "Despegó"
         },
         {
-            "vuelo_numero": "H2 112",
-            "aerolinea": "Sky Airline",
-            "tipo": "Salida",
-            "origen": "La Serena (LSC)",
-            "destino": "Antofagasta (ANF)",
-            "fecha": "2026-07-14",
-            "hora_programada": "13:20",
-            "estado": "Programado"
-        },
-        {
-            "vuelo_numero": "LA305",
-            "aerolinea": "LATAM Airlines",
+            "vuelo_numero": "JA180",
+            "aerolinea": "JetSMART",
             "tipo": "Arribo",
             "origen": "Santiago (SCL)",
             "destino": "La Serena (LSC)",
             "fecha": "2026-07-14",
-            "hora_programada": "15:10",
-            "estado": "En Vuelo"
+            "hora_programada": "09:05",
+            "estado": "Aterrizó"
         },
         {
-            "vuelo_numero": "JA183",
+            "vuelo_numero": "JA181",
             "aerolinea": "JetSMART",
             "tipo": "Salida",
             "origen": "La Serena (LSC)",
             "destino": "Santiago (SCL)",
             "fecha": "2026-07-14",
-            "hora_programada": "18:40",
+            "hora_programada": "09:40",
+            "estado": "Despegó"
+        },
+        {
+            "vuelo_numero": "H2111",
+            "aerolinea": "Sky Airline",
+            "tipo": "Arribo",
+            "origen": "Antofagasta (ANF)",
+            "destino": "La Serena (LSC)",
+            "fecha": "2026-07-14",
+            "hora_programada": "11:15",
+            "estado": "En Vuelo"
+        },
+        {
+            "vuelo_numero": "H2112",
+            "aerolinea": "Sky Airline",
+            "tipo": "Salida",
+            "origen": "La Serena (LSC)",
+            "destino": "Santiago (SCL)",
+            "fecha": "2026-07-14",
+            "hora_programada": "11:55",
+            "estado": "En Embarque"
+        },
+        {
+            "vuelo_numero": "LA304",
+            "aerolinea": "LATAM Airlines",
+            "tipo": "Arribo",
+            "origen": "Santiago (SCL)",
+            "destino": "La Serena (LSC)",
+            "fecha": "2026-07-14",
+            "hora_programada": "14:20",
+            "estado": "Programado"
+        },
+        {
+            "vuelo_numero": "LA307",
+            "aerolinea": "LATAM Airlines",
+            "tipo": "Salida",
+            "origen": "La Serena (LSC)",
+            "destino": "Santiago (SCL)",
+            "fecha": "2026-07-14",
+            "hora_programada": "15:02",
+            "estado": "Programado"
+        },
+        {
+            "vuelo_numero": "JA186",
+            "aerolinea": "JetSMART",
+            "tipo": "Arribo",
+            "origen": "Calama (CJC)",
+            "destino": "La Serena (LSC)",
+            "fecha": "2026-07-14",
+            "hora_programada": "17:50",
+            "estado": "Programado"
+        },
+        {
+            "vuelo_numero": "JA187",
+            "aerolinea": "JetSMART",
+            "tipo": "Salida",
+            "origen": "La Serena (LSC)",
+            "destino": "Santiago (SCL)",
+            "fecha": "2026-07-14",
+            "hora_programada": "18:30",
+            "estado": "Programado"
+        },
+        {
+            "vuelo_numero": "LA312",
+            "aerolinea": "LATAM Airlines",
+            "tipo": "Arribo",
+            "origen": "Santiago (SCL)",
+            "destino": "La Serena (LSC)",
+            "fecha": "2026-07-14",
+            "hora_programada": "20:15",
+            "estado": "Programado"
+        },
+        {
+            "vuelo_numero": "H2115",
+            "aerolinea": "Sky Airline",
+            "tipo": "Arribo",
+            "origen": "Iquique (IQQ)",
+            "destino": "La Serena (LSC)",
+            "fecha": "2026-07-14",
+            "hora_programada": "21:30",
             "estado": "Programado"
         }
     ]
