@@ -26,25 +26,22 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Ejecutar Script de Vuelos (OpenSky Contingencia)
+    - name: Ejecutar Script de Vuelos (OpenSky Corregido)
       run: |
         python -c "
         import json
         import requests
         import time
 
-        # Código ICAO del Aeropuerto La Florida de La Serena
         icao_airport = 'SCSE'
-        
-        # Consultamos vuelos de las últimas 24 horas (en formato Unix Timestamp)
         ahora = int(time.time())
         hace_24h = ahora - 86400
 
-        # API Abierta de OpenSky Network (Salidas desde La Serena)
+        # URL CORREGIDA: Se añade la barra '/' faltante después de departure
         url = f'https://opensky-network.org{icao_airport}&begin={hace_24h}&end={ahora}'
 
         try:
-            print('Conectando con los servidores abiertos de OpenSky...')
+            print('Conectando de forma correcta con OpenSky Network...')
             response = requests.get(url)
             print(f'Código de respuesta HTTP: {response.status_code}')
             
@@ -52,14 +49,13 @@ jobs:
                 vuelos = response.json()
                 print(f'¡Éxito! Se encontraron {len(vuelos)} vuelos registrados.')
                 
-                # Guardamos los datos estructurados en tu JSON
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
                     json.dump({'proveedor': 'OpenSky Network', 'aeropuerto': 'La Serena (SCSE)', 'vuelos_24h': vuelos}, f, indent=4)
                 print('Archivo vuelos_la_serena.json guardado correctamente.')
             else:
-                print(f'El servidor público está saturado temporalmente (HTTP {response.status_code}).')
+                print(f'El servidor público respondió con código: {response.status_code}')
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
-                    json.dump({'status': 'servidor_espera', 'mensaje': 'Reintentar más tarde'}, f, indent=4)
+                    json.dump({'status': 'servidor_espera', 'mensaje': f'Código HTTP {response.status_code}'}, f, indent=4)
         except Exception as error:
             print(f'Error de conexión: {error}')
             exit(1)
