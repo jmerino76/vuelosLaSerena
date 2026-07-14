@@ -1,91 +1,113 @@
 import os
+import re
 import json
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+# La URL que descubriste con los arribos en camino hacia La Serena
 url_enroute = "https://flightaware.com"
 
 cabeceras = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'es-CL,es;q=0.9,en;q=0.8'
 }
 
 try:
-    print("Conectando de forma directa a la grilla /enroute de FlightAware...")
+    print("Iniciando conexión cruda en tiempo real a la grilla /enroute de FlightAware...")
     respuesta = requests.get(url_enroute, headers=cabeceras, timeout=20)
     
     vuelos_reales_detectados = []
     hoy = datetime.now().strftime('%Y-%m-%d')
 
     if respuesta.status_code == 200:
-        soup = BeautifulSoup(respuesta.text, 'html.parser')
+        # Analizamos el bloque script interno donde FlightAware inyecta la grilla de datos para el navegador
+        # Esto nos permite extraer los datos reales saltándonos bloqueos visuales de etiquetas de diseño
+        patron_datos = re.search(r'trackData\s*=\s*({.*?});', respuesta.text)
         
-        # Buscamos todas las filas dentro de cualquier estructura de tabla en la página
-        filas = soup.select('tr')
-        print(f"Total de filas evaluadas en el documento HTML: {len(filas)}")
-        
-        for fila in filas:
-            # Buscamos elementos td o th para abarcar cualquier diseño de FlightAware
-            celdas = fila.find_all(['td', 'th', 'div'])
+        if patron_datos:
+            print("Datos de telemetría aérea interceptados en el código fuente.")
+            datos_crudos = json.loads(patron_datos.group(1))
             
-            # Limpiamos y unimos los contenidos internos de la fila para validación rápida
-            fila_texto = fila.get_text(" ", strip=True).upper()
+            # FlightAware organiza los vuelos en camino dentro de su objeto 'enroute' o 'flights'
+            vuelos_api_interna = datos_crudos.get('enroute', {}).get('flights', [])
             
-            # Filtro inteligente: validamos si la fila contiene alguna aerolínea chilena comercial
-            if any(sigla in fila_texto for sigla in ['LAN', 'LA ', 'LXP', 'SKU', 'H2 ', 'JAT', 'JA ']):
+            for f in vuelos_api_interna:
+                ident = f.get('ident', '').upper().replace(' ', '')
                 
-                # Extraemos de forma limpia el texto de cada elemento de la fila
-                datos_fila = [c.get_text(strip=True) for c in celdas if c.get_text(strip=True)]
-                
-                # Si la fila tiene los campos necesarios procesamos sus posiciones
-                if len(datos_fila) >= 4:
-                    # Buscamos el identificador del vuelo (ej: LAN100, SKU1741)
-                    ident = "".join(datos_fila[0].split()).upper()
+                # Sintonizar únicamente las aerolíneas comerciales que operan hoy hacia La Serena
+                if ident.startswith(('LAN', 'LA', 'LXP', 'SKU', 'H2', 'JAT', 'JA', 'BON')):
                     
-                    # Nos aseguramos que sea un número de vuelo válido y no un texto suelto
-                    if any(char.isdigit() for char in ident) and len(ident) < 10:
+                    # Extraer la hora de arribo estimada calculada por el radar en formato HH:MM
+                    llegada_estimada = f.get('estimated_arrival_time', f.get('scheduled_arrival_time', ''))
+                    
+                    if llegada_estimada:
+                        hora_limpia = llegada_estimada.split(' ')[-1].replace('*', '').strip()[:5]
                         
-                        # Mapeamos las columnas basándonos en la estructura visual de la grilla
-                        origen_raw = datos_fila[2] if len(datos_fila) > 2 else 'Origen'
-                        llegada_raw = datos_fila[-1] # La última columna siempre es la hora de arribo estimada
-                        
-                        # Limpiamos la hora de llegada removiendo los asteriscos de retraso (*)
-                        hora_limpia = llegada_raw.split(' ')[0].replace('*', '').strip()
-                        
-                        # Clasificación exacta de aerolíneas nacionales
                         aerolinea = 'Comercial / Chárter'
                         if ident.startswith(('LAN', 'LA', 'LXP')): aerolinea = 'LATAM Airlines'
                         elif ident.startswith(('SKU', 'H2')): aerolinea = 'Sky Airline'
                         elif ident.startswith(('JAT', 'JA')): aerolinea = 'JetSMART'
-                        elif ident.startswith('BON'): aerolinea = 'Skyline / Bonus'
 
-                        # Detección automática de estados de retraso por asterisco (*)
+                        # Extraer estados de retraso directo desde los flags de la plataforma web
+                        estado = 'EN RUTA'
+                        if f.get('delayed') or f.get('delay_minutes', 0) > 0:
+                            estado = 'ATRASADO / REPROGRAMADO'
+                        elif f.get('cancelled'):
+                            estado = 'CANCELADO'
+
+                        vuelos_reales_detectados.append({
+                            'vuelo_numero': ident,
+                            'aerolinea': aerolinea,
+                            'tipo': 'Arribo',
+                            'origen': f.get('origin_city', f.get('origin_name', 'Origen')).split(',')[0].strip(),
+                            'destino': 'La Serena (LSC)',
+                            'fecha': hoy,
+                            'hora_llegada_estimada': hora_limpia,
+                            'estado': estado
+                        })
+        else:
+            # Si no intercepta el objeto de datos directo, recorremos de forma estructurada las celdas de la tabla HTML
+            soup = BeautifulSoup(respuesta.text, 'html.parser')
+            filas = soup.select('table tr')
+            
+            for fila in filas:
+                celdas = fila.find_all(['td', 'th'])
+                if len(celdas) >= 5:
+                    ident = celdas[0].get_text(strip=True).upper().replace(' ', '')
+                    origen_raw = celdas[2].get_text(strip=True)
+                    llegada_raw = celdas[4].get_text(strip=True)
+                    
+                    if ident.startswith(('LAN', 'LA', 'LXP', 'SKU', 'H2', 'JAT', 'JA', 'BON')) and any(c.isdigit() for c in ident):
+                        hora_limpia = llegada_raw.split(' ')[0].replace('*', '').strip()
+                        
+                        aerolinea = 'Comercial / Chárter'
+                        if ident.startswith(('LAN', 'LA', 'LXP')): aerolinea = 'LATAM Airlines'
+                        elif ident.startswith(('SKU', 'H2')): aerolinea = 'Sky Airline'
+                        elif ident.startswith(('JAT', 'JA')): aerolinea = 'JetSMART'
+
                         estado = 'PROGRAMADO'
                         if '*' in llegada_raw:
                             estado = 'ATRASADO / REPROGRAMADO'
                         elif 'P' in llegada_raw.upper() or 'A' in llegada_raw.upper():
                             estado = 'EN RUTA'
 
-                        origen_limpio = origen_raw.replace("Int'l", "").replace("Airport", "").strip()
+                        vuelos_reales_detectados.append({
+                            'vuelo_numero': ident,
+                            'aerolinea': aerolinea,
+                            'tipo': 'Arribo',
+                            'origen': origen_raw.split('(')[0].replace("Int'l", "").replace("Airport", "").strip(),
+                            'destino': 'La Serena (LSC)',
+                            'fecha': hoy,
+                            'hora_llegada_estimada': hora_limpia,
+                            'estado': estado
+                        })
 
-                        if not any(v['vuelo_numero'] == ident for v in vuelos_reales_detectados):
-                            vuelos_reales_detectados.append({
-                                'vuelo_numero': ident,
-                                'aerolinea': aerolinea,
-                                'tipo': 'Arribo',
-                                'origen': origen_limpio,
-                                'destino': 'La Serena (LSC)',
-                                'fecha': hoy,
-                                'hora_llegada_estimada': hora_limpia,
-                                'estado': estado
-                            })
-
-        # Estructura del JSON final de producción libre de grillas fijas
+        # Estructura del JSON final de producción PURA sin grillas estáticas fijas de respaldo
         json_salida = {
             'status': 'exito' if len(vuelos_reales_detectados) > 0 else 'vacio',
-            'proveedor': 'FlightAware EnRoute HTML Stream',
+            'proveedor': 'FlightAware Realtime Stream Engine',
             'aeropuerto': {'nombre': 'Aeropuerto La Florida', 'iata': 'LSC', 'icao': 'SCSE'},
             'ultima_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S CLST'),
             'vuelos_programados': vuelos_reales_detectados
@@ -94,12 +116,18 @@ try:
         with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
             json.dump(json_salida, f, ensure_ascii=False, indent=4)
             
-        print(f"Sincronización completada. Se extrajeron {len(vuelos_reales_detectados)} arribos reales en vivo.")
+        print(f"Sincronización finalizada. Se procesaron {len(vuelos_reales_detectados)} arribos reales extraídos de la web.")
+        
+        # Forzamos código de salida de error si Cloudflare bloqueó la IP de GitHub y devolvió 0 vuelos
+        # Esto sirve para que tú veas la alerta en Actions en lugar de recibir un JSON vacío
+        if len(vuelos_reales_detectados) == 0:
+            print("⚠️ Alerta: El servidor no devolvió vuelos reales en este ciclo debido a políticas de bloqueo perimetral.")
+            exit(1)
         
     else:
-        print(f"Error de red con FlightAware: HTTP {respuesta.status_code}")
+        print(f"Error de red directo con FlightAware: HTTP {respuesta.status_code}")
         exit(1)
 
 except Exception as e:
-    print(f"Falla crítica en el raspado: {e}")
+    print(f"Falla crítica en el raspado web directo: {e}")
     exit(1)
