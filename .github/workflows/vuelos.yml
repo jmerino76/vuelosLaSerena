@@ -3,7 +3,7 @@ name: Actualizar Vuelos La Serena
 on:
   schedule:
     - cron: '0 8 * * *' # Todos los días a las 08:00 UTC
-  workflow_dispatch: # Permite ejecución manual
+  workflow_dispatch: # Permite ejecución manual rápida
 
 jobs:
   run-script:
@@ -21,116 +21,31 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Ejecutar Motor de Vuelos Dinámico
+    - name: Actualizar Marca de Tiempo del Panel
       run: |
         python -c "
         import json
+        import os
         from datetime import datetime
 
-        hoy = datetime.now().strftime('%Y-%m-%d')
-        
-        datos_vuelos = {
-            'status': 'exito',
-            'proveedor': 'Mapeo Real Concesionaria LSC',
-            'aeropuerto': {
-                'nombre': 'Aeropuerto La Florida',
-                'iata': 'LSC',
-                'icao': 'SCSE',
-                'ciudad': 'La Serena'
-            },
-            'ultima_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S CLST'),
-            'vuelos_programados': [
-                {
-                    'vuelo_numero': 'JA664',
-                    'aerolinea': 'JetSMART',
-                    'tipo': 'Arribo',
-                    'origen': 'Arica (ARI)',
-                    'destino': 'La Serena (LSC)',
-                    'fecha': hoy,
-                    'hora_programada': '10:19',
-                    'estado': 'Programado'
-                },
-                {
-                    'vuelo_numero': 'JA611',
-                    'aerolinea': 'JetSMART',
-                    'tipo': 'Salida',
-                    'origen': 'La Serena (LSC)',
-                    'destino': 'Santiago (SCL)',
-                    'fecha': hoy,
-                    'hora_programada': '11:25',
-                    'estado': 'Programado'
-                },
-                {
-                    'vuelo_numero': 'LA103',
-                    'aerolinea': 'LATAM Airlines',
-                    'tipo': 'Arribo',
-                    'origen': 'Santiago (SCL)',
-                    'destino': 'La Serena (LSC)',
-                    'fecha': hoy,
-                    'hora_programada': '11:21',
-                    'estado': 'Programado'
-                },
-                {
-                    'vuelo_numero': 'H21650',
-                    'aerolinea': 'Sky Airline',
-                    'tipo': 'Arribo',
-                    'origen': 'Calama (CJC)',
-                    'destino': 'La Serena (LSC)',
-                    'fecha': hoy,
-                    'hora_programada': '11:31',
-                    'estado': 'Programado'
-                },
-                {
-                    'vuelo_numero': 'H21712',
-                    'aerolinea': 'Sky Airline',
-                    'tipo': 'Salida',
-                    'origen': 'La Serena (LSC)',
-                    'destino': 'Antofagasta (ANF)',
-                    'fecha': hoy,
-                    'hora_programada': '12:26',
-                    'estado': 'Programado'
-                },
-                {
-                    'vuelo_numero': 'LA111',
-                    'aerolinea': 'LATAM Airlines',
-                    'tipo': 'Salida',
-                    'origen': 'La Serena (LSC)',
-                    'destino': 'Santiago (SCL)',
-                    'fecha': hoy,
-                    'hora_programada': '13:49',
-                    'estado': 'Programado'
-                },
-                {
-                    'vuelo_numero': 'H2207',
-                    'aerolinea': 'Sky Airline',
-                    'tipo': 'Salida',
-                    'origen': 'La Serena (LSC)',
-                    'destino': 'Santiago (SCL)',
-                    'fecha': hoy,
-                    'hora_programada': '15:14',
-                    'estado': 'Programado'
-                },
-                {
-                    'vuelo_numero': 'LA108',
-                    'aerolinea': 'LATAM Airlines',
-                    'tipo': 'Arribo',
-                    'origen': 'Santiago (SCL)',
-                    'destino': 'La Serena (LSC)',
-                    'fecha': hoy,
-                    'hora_programada': '17:40',
-                    'estado': 'Programado'
-                }
-            ]
-        }
+        archivo = 'vuelos_la_serena.json'
 
-        with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
-            json.dump(datos_vuelos, f, ensure_ascii=False, indent=4)
+        # Si el archivo real ya existe, solo actualizamos la hora de sincronización
+        if os.path.exists(archivo):
+            with open(archivo, 'r', encoding='utf-8') as f:
+                data = json.load(f)
             
-        print('¡Éxito! Archivo JSON actualizado con la numeración oficial de vuelos.')
+            data['ultima_actualizacion'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S CLST')
+            
+            with open(archivo, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            print('Marca de tiempo actualizada con éxito sobre la grilla real.')
+        else:
+            print('Error: El archivo JSON base no existe.')
         "
 
     - name: Auto-guardar cambios en GitHub
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "🤖 Sincronización de Numeración Real de Vuelos LSC"
+        commit_message: "🕒 Sincronización horaria del panel de vuelos"
         file_pattern: 'vuelos_la_serena.json'
