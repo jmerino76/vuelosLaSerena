@@ -42,41 +42,29 @@ jobs:
             print('Error: La API Key no fue detectada.')
             exit(1)
 
-        # Simplificamos al máximo la URL para evitar bloqueos del plan gratuito
-        url = 'http://aviationstack.com'
-        parametros = {
-            'access_key': key,
-            'dep_iata': iata
-        }
+        # Usamos la URL unificada directa que evita redirecciones a la Landing Page
+        url = f'http://aviationstack.com{key}&dep_iata={iata}'
 
         try:
-            print('Iniciando llamada a la API de Aviationstack...')
-            response = requests.get(url, params=parametros)
+            print('Iniciando llamada directa a Aviationstack...')
+            response = requests.get(url)
             print(f'Código de respuesta HTTP del servidor: {response.status_code}')
             
-            # Verificación preventiva: ¿es realmente un JSON válido?
             try:
                 data = response.json()
-                print('Estructura JSON recibida con éxito.')
-                
-                # Si la API devolvió un mensaje de error interno estructurado
-                if 'error' in data:
-                    print(f'Aviso de la API: {data[\"error\"][\"message\"]}')
+                print('¡Éxito! Estructura JSON válida recibida.')
                 
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=4)
-                print('Archivo vuelos_la_serena.json actualizado localmente.')
+                print('Archivo vuelos_la_serena.json guardado correctamente.')
                 
             except ValueError:
-                print('⚠️ Error: El servidor no respondió un JSON. Leyendo respuesta como texto:')
-                print(response.text)
-                
-                # Guardamos la respuesta de texto plano para que puedas ver el error en el repositorio
+                print('⚠️ El servidor sigue respondiendo HTML. Guardando muestra del texto:')
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
-                    json.dump({'status': 'error_servidor', 'respuesta': response.text[:500]}, f, indent=4)
+                    json.dump({'status': 'error_redireccion', 'contenido': response.text[:300]}, f, indent=4)
                     
         except Exception as error:
-            print(f'Falla crítica en la conexión: {error}')
+            print(f'Falla crítica: {error}')
             exit(1)
         "
 
