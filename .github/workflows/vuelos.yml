@@ -1,8 +1,8 @@
-name: Actualizar Vuelos La Serena
+name: Actualizar Vuelos La Serena Realtime
 
 on:
   schedule:
-    - cron: '0 8 * * *' # Todos los días a las 08:00 UTC
+    - cron: '*/15 * * * *' # Se ejecuta automáticamente cada 15 minutos
   workflow_dispatch: # Permite ejecución manual rápida
 
 jobs:
@@ -21,31 +21,112 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Actualizar Marca de Tiempo del Panel
+    - name: Instalar Dependencias del Radar
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests FlightRadarAPI
+
+    - name: Extreer Vuelos en Tiempo Real
       run: |
         python -c "
         import json
-        import os
         from datetime import datetime
+        from FlightRadar24 import FlightRadar24API
 
-        archivo = 'vuelos_la_serena.json'
+        fr_api = FlightRadar24API()
+        
+        # Código ICAO oficial para el Aeropuerto La Florida de La Serena
+        iata_code = 'LSC'
+        icao_code = 'SCSE'
 
-        # Si el archivo real ya existe, solo actualizamos la hora de sincronización
-        if os.path.exists(archivo):
-            with open(archivo, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+        try:
+            print('Conectando con los radares en vivo de FlightRadar24...')
+            # Extrae la tabla de operaciones actual del aeropuerto
+            detalles_aeropuerto = fr_api.get_airport_details(icao_code)
             
-            data['ultima_actualizacion'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S CLST')
+            vuelos_procesados = []
             
-            with open(archivo, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            print('Marca de tiempo actualizada con éxito sobre la grilla real.')
-        else:
-            print('Error: El archivo JSON base no existe.')
+            # 1. PROCESAR LLEGADAS (ARRIVALS)
+            arrivals = detalles_aeropuerto.get('pluginData', {}).get('schedule', {}).get('arrivals', {}).get('data', [])
+            for item in arrivals:
+                flight = item.get('flight', {})
+                info_tiempo = flight.get('time', {})
+                
+                # Calcular horas y detectar retrasos
+                sched_time = info_tiempo.get('scheduled', {}).get('arrival')
+                real_time = info_tiempo.get('real', {}).get('arrival') or info_tiempo.get('estimated', {}).get('arrival')
+                
+                hora_str = '-'
+                if sched_time:
+                    hora_str = datetime.fromtimestamp(sched_time).strftime('%H:%M')
+
+                estado_vuelo = flight.get('status', {}).get('text', 'PROGRAMADO').upper()
+                
+                # Traducir estados comunes del radar
+                if 'DELAYED' in estado_vuelo:
+                    estado_vuelo = 'ATRASADO'
+                elif 'LANDED' in estado_vuelo:
+                    estado_vuelo = 'ATERRIZÓ'
+                elif 'ACTIVE' in estado_vuelo:
+                    estado_vuelo = 'EN VUELO'
+
+                vuelos_procesados.append({
+                    'vuelo_numero': flight.get('identification', {}).get('number', {}).get('default', 'N/A'),
+                    'aerolinea': flight.get('airline', {}).get('name', 'Aerolínea'),
+                    'tipo': 'Arribo',
+                    'origen': flight.get('airport', {}).get('origin', {}).get('name', 'Santiago (SCL)').split(' Airport')[0],
+                    'destino': 'La Serena (LSC)',
+                    'fecha': datetime.now().strftime('%Y-%m-%d'),
+                    'hora_programada': hora_str,
+                    'estado': estado_vuelo
+                })
+
+            # 2. PROCESAR SALIDAS (DEPARTURES)
+            departures = detalles_aeropuerto.get('pluginData', {}).get('schedule', {}).get('departures', {}).get('data', [])
+            for item in departures:
+                flight = item.get('flight', {})
+                info_tiempo = flight.get('time', {})
+                
+                sched_time = info_tiempo.get('scheduled', {}).get('departure')
+                hora_str = datetime.fromtimestamp(sched_time).strftime('%H:%M') if sched_time else '-'
+                
+                estado_vuelo = flight.get('status', {}).get('text', 'PROGRAMADO').upper()
+                if 'DELAYED' in estado_vuelo:
+                    estado_vuelo = 'ATRASADO'
+                elif 'DEPARTED' in estado_vuelo:
+                    estado_vuelo = 'DESPEGÓ'
+
+                vuelos_procesados.append({
+                    'vuelo_numero': flight.get('identification', {}).get('number', {}).get('default', 'N/A'),
+                    'aerolinea': flight.get('airline', {}).get('name', 'Aerolínea'),
+                    'tipo': 'Salida',
+                    'origen': 'La Serena (LSC)',
+                    'destino': flight.get('airport', {}).get('destination', {}).get('name', 'Santiago (SCL)').split(' Airport')[0],
+                    'fecha': datetime.now().strftime('%Y-%m-%d'),
+                    'hora_programada': hora_str,
+                    'estado': estado_vuelo
+                })
+
+            # Construimos la estructura final del JSON
+            json_salida = {
+                'status': 'exito',
+                'proveedor': 'Radar Live FlightRadar24',
+                'aeropuerto': {'nombre': 'Aeropuerto La Florida', 'iata': iata_code, 'icao': icao_code},
+                'ultima_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S CLST'),
+                'vuelos_programados': vuelos_procesados
+            }
+
+            with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
+                json.dump(json_salida, f, ensure_ascii=False, indent=4)
+            print('Datos del radar guardados exitosamente.')
+
+        except Exception as err:
+            print(f'Error al conectar con FlightRadar24: {err}')
+            exit(1)
         "
 
     - name: Auto-guardar cambios en GitHub
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "🕒 Sincronización horaria del panel de vuelos"
+        commit_message: "✈️ Actualización de retrasos y vuelos en vivo LSC"
         file_pattern: 'vuelos_la_serena.json'
