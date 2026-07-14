@@ -42,20 +42,32 @@ jobs:
             print("Error: No se encontró la API Key.")
             exit(1)
 
-        # Dirección URL limpia y forzada
-        url = f"http://aviationstack.com{API_KEY}&dep_iata={AIRPORT_IATA}"
+        # URL optimizada: Agregamos el límite estándar para que el servidor responda rápido
+        url = f"http://aviationstack.com{API_KEY}&dep_iata={AIRPORT_IATA}&limit=10"
 
         try:
+            print("Enviando petición a Aviationstack...")
             response = requests.get(url)
+            print(f"Código de respuesta HTTP: {response.status_code}")
+            
             if response.status_code == 200:
                 data = response.json()
+                
+                # Rastreo: Verificar en la consola si la API trajo datos o vino vacía
+                print(f"Respuesta cruda de la API: {data}")
+                
+                if "data" in data and len(data["data"]) == 0:
+                    print("⚠️ Alerta: La API conectó bien pero el aeropuerto LSC no reporta vuelos en este instante.")
+                
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=4)
-                print("Datos guardados con éxito.")
+                print("Proceso de escritura completado en vuelos_la_serena.json.")
             else:
-                print(f"Error en la API: {response.status_code}")
+                print(f"Error en la API: {response.status_code} - {response.text}")
+                exit(1) # Forzar caída para ver el error
         except Exception as e:
-            print(f"Error de conexión: {e}")
+            print(f"Error crítico de ejecución: {e}")
+            exit(1)
         EOF
         python script_forzado.py
 
