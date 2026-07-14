@@ -35,36 +35,40 @@ jobs:
         import json
         import requests
 
+        # Leemos la clave desde las variables de entorno del sistema de forma segura
         key = os.environ.get('AVIATIONSTACK_KEY')
         iata = 'LSC'
 
         if not key:
-            print('Error: La API Key no fue detectada.')
+            print('Error: La API Key no fue detectada en las variables de entorno.')
             exit(1)
 
-        # Usamos la URL unificada directa que evita redirecciones a la Landing Page
-        url = f'http://aviationstack.com{key}&dep_iata={iata}'
+        # Estructura fija y estricta de la URL. Aquí NO hay variables mezcladas con el host.
+        url_base = 'http://aviationstack.com'
+        
+        # Unimos los parámetros usando el formato limpio de Python
+        url_final = f'{url_base}?access_key={key}&dep_iata={iata}'
 
         try:
-            print('Iniciando llamada directa a Aviationstack...')
-            response = requests.get(url)
+            print('Iniciando llamada limpia a la API de Aviationstack...')
+            response = requests.get(url_final)
             print(f'Código de respuesta HTTP del servidor: {response.status_code}')
             
             try:
                 data = response.json()
-                print('¡Éxito! Estructura JSON válida recibida.')
+                print('Estructura JSON recibida con éxito.')
                 
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=4)
-                print('Archivo vuelos_la_serena.json guardado correctamente.')
+                print('Archivo vuelos_la_serena.json actualizado en el entorno local.')
                 
             except ValueError:
-                print('⚠️ El servidor sigue respondiendo HTML. Guardando muestra del texto:')
+                print('⚠️ Error: El servidor no respondió un JSON válido.')
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
-                    json.dump({'status': 'error_redireccion', 'contenido': response.text[:300]}, f, indent=4)
+                    json.dump({'status': 'error_formato', 'respuesta': response.text[:300]}, f, indent=4)
                     
         except Exception as error:
-            print(f'Falla crítica: {error}')
+            print(f'Falla crítica en la conexión: {error}')
             exit(1)
         "
 
