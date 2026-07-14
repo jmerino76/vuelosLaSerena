@@ -26,39 +26,38 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests
 
-    - name: Ejecutar Script de Vuelos (OpenSky Seguro)
+    - name: Ejecutar Script de Vuelos (OpenSky Extendido)
       run: |
         python -c "
         import json
         import requests
         import time
 
-        # Separamos estrictamente la dirección de internet para evitar errores de caché
         host_web = 'https://opensky-network.org'
         ruta_api = '/api/flights/departure'
         
+        # Ampliamos el rango a 7 días atrás (604800 segundos) para capturar el último itinerario guardado
         ahora = int(time.time())
-        hace_24h = ahora - 86400
+        hace_7dias = ahora - 604800
 
-        # Unimos las piezas de forma nativa en Python
-        url_limpia = f'{host_web}{ruta_api}?airport=SCSE&begin={hace_24h}&end={ahora}'
+        url_limpia = f'{host_web}{ruta_api}?airport=SCSE&begin={hace_7dias}&end={ahora}'
 
         try:
-            print('Iniciando conexion limpia hacia OpenSky Network...')
+            print('Iniciando conexion rango extendido hacia OpenSky Network...')
             response = requests.get(url_limpia)
             print(f'Codigo de respuesta HTTP: {response.status_code}')
             
             if response.status_code == 200:
                 vuelos = response.json()
-                print(f'Exito: Se procesaron {len(vuelos)} vuelos.')
+                print(f'Exito: Se procesaron {len(vuelos)} vuelos históricos.')
                 
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
-                    json.dump({'proveedor': 'OpenSky Network', 'aeropuerto': 'La Serena (SCSE)', 'vuelos_24h': vuelos}, f, indent=4)
+                    json.dump({'proveedor': 'OpenSky Network', 'aeropuerto': 'La Serena (SCSE)', 'rango': '7 dias', 'vuelos': vuelos}, f, indent=4)
                 print('Archivo vuelos_la_serena.json modificado con exito.')
             else:
                 print(f'El servidor respondio con codigo: {response.status_code}')
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
-                    json.dump({'status': 'servidor_espera', 'codigo': response.status_code}, f, indent=4)
+                    json.dump({'status': 'sin_datos_recientes', 'codigo': response.status_code, 'detalle': 'Intenta ampliando el rango o cambiando de API'}, f, indent=4)
         except Exception as error:
             print(f'Error critico de red: {error}')
             exit(1)
@@ -67,5 +66,5 @@ jobs:
     - name: Auto-guardar cambios en GitHub
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "🤖 Actualización automática de vuelos LSC (OpenSky)"
+        commit_message: "🤖 Actualización automática de vuelos LSC (Rango Extendido)"
         file_pattern: 'vuelos_la_serena.json'
