@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write # Permiso explícito para escribir en el repositorio
+      contents: write
 
     steps:
     - name: Descargar repositorio
@@ -26,12 +26,39 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests python-dotenv
 
-    - name: Ejecutar script de Aviationstack
+    - name: Crear y Ejecutar Script de Vuelos
       env:
         AVIATIONSTACK_KEY: ${{ secrets.AVIATIONSTACK_KEY }}
-      run: python tu_script.py
+      run: |
+        cat << 'EOF' > script_forzado.py
+        import os
+        import json
+        import requests
 
-    # Usamos una acción dedicada para hacer commit y push sin usar comandos nativos fallidos
+        API_KEY = os.getenv('AVIATIONSTACK_KEY')
+        AIRPORT_IATA = 'LSC'
+
+        if not API_KEY:
+            print("Error: No se encontró la API Key.")
+            exit(1)
+
+        # Dirección URL limpia y forzada
+        url = f"http://aviationstack.com{API_KEY}&dep_iata={AIRPORT_IATA}"
+
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+                print("Datos guardados con éxito.")
+            else:
+                print(f"Error en la API: {response.status_code}")
+        except Exception as e:
+            print(f"Error de conexión: {e}")
+        EOF
+        python script_forzado.py
+
     - name: Auto-guardar cambios en GitHub
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
