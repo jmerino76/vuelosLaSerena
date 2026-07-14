@@ -35,40 +35,43 @@ jobs:
         import json
         import requests
 
-        # Leemos la clave desde las variables de entorno del sistema de forma segura
         key = os.environ.get('AVIATIONSTACK_KEY')
         iata = 'LSC'
 
         if not key:
-            print('Error: La API Key no fue detectada en las variables de entorno.')
+            print('Error: La API Key no fue detectada.')
             exit(1)
 
-        # Estructura fija y estricta de la URL. Aquí NO hay variables mezcladas con el host.
         url_base = 'http://aviationstack.com'
-        
-        # Unimos los parámetros usando el formato limpio de Python
         url_final = f'{url_base}?access_key={key}&dep_iata={iata}'
 
+        # TRUCO CLAVE: Camuflamos la petición simulando ser un navegador Chrome en Windows
+        cabeceras = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json'
+        }
+
         try:
-            print('Iniciando llamada limpia a la API de Aviationstack...')
-            response = requests.get(url_final)
+            print('Iniciando llamada camuflada a Aviationstack...')
+            # Pasamos las cabeceras simuladas
+            response = requests.get(url_final, headers=cabeceras)
             print(f'Código de respuesta HTTP del servidor: {response.status_code}')
             
             try:
                 data = response.json()
-                print('Estructura JSON recibida con éxito.')
+                print('¡Éxito! Estructura JSON válida recibida.')
                 
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=4)
-                print('Archivo vuelos_la_serena.json actualizado en el entorno local.')
+                print('Archivo vuelos_la_serena.json guardado correctamente.')
                 
             except ValueError:
-                print('⚠️ Error: El servidor no respondió un JSON válido.')
+                print('⚠️ El servidor respondió texto plano o HTML.')
                 with open('vuelos_la_serena.json', 'w', encoding='utf-8') as f:
-                    json.dump({'status': 'error_formato', 'respuesta': response.text[:300]}, f, indent=4)
+                    json.dump({'status': 'error_formato', 'respuesta': response.text[:500]}, f, indent=4)
                     
         except Exception as error:
-            print(f'Falla crítica en la conexión: {error}')
+            print(f'Falla crítica: {error}')
             exit(1)
         "
 
