@@ -45,7 +45,6 @@ def enviar_a_google_sheets(llegadas, ahora_local):
             "estado": v["estado"]
         })
 
-    # Estructuramos el JSON incluyendo el encabezado literal del README
     paquete_completo = {
         "metadata": {
             "titulo": "✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)",
@@ -82,12 +81,13 @@ def generar_reporte(html):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
             if len(celdas) >= 6:
-                vuelo_raw = celdas
-                origen_raw = celdas
-                fecha = celdas
-                hora = celdas
-                cinta_raw = celdas
-                estado_raw = celdas.upper() if len(celdas) > 6 else "PROGRAMADO"
+                vuelo_raw = celdas[0]
+                origen_raw = celdas[1]
+                fecha = celdas[2]
+                hora = celdas[3]
+                cinta_raw = celdas[4]
+                # CORRECCIÓN: Leemos de forma aislada la celda número 6 del array de texto
+                estado_raw = celdas[5].upper() if len(celdas) > 5 else "PROGRAMADO"
 
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
@@ -122,7 +122,7 @@ def generar_reporte(html):
 
                 cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
 
-                if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢", "FIN"]):
+                if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "FIN"]):
                     estado = "🟢 Aterrizó"
                 elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
                     estado = "🔴 Retrasado"
