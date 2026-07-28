@@ -1,10 +1,10 @@
-# ✈️ Itinerario Completo de Arribos Diarios - La Serena (SCSE)
+# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-07-28 14:58:43 (Hora Local Chile)`
+Última actualización del reporte: `2026-07-28 15:20:42 (Hora Local Chile)`
 
-| Vuelo | Origen | Salida Programada | Llegada Programada | Tipo de Avión |
-| :--- | :--- | :--- | :--- | :--- |
-| - | No se encontraron registros de itinerarios comerciales para hoy | - | - | - |
+| Vuelo | Aerolínea | Origen | Salida Estimada | Llegada Estimada/Real | Estado |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| - | - | No se encontraron vuelos programados para hoy | - | - | - |
 
 
-*Datos diarios programados obtenidos a través de AeroAPI de [FlightAware](https://es.flightaware.com/).*
+*Datos diarios automatizados a través de la API de [Aviationstack](https://aviationstack.com).*
