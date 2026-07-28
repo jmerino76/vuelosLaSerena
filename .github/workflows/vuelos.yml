@@ -34,7 +34,8 @@ jobs:
 
     - name: Guardar cambios en el repositorio
       run: |
-        git config --local user.email "github-actions[bot]@://github.com"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add README.md
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización automática de estado de vuelos" && git push)
+        # Agregamos tanto el README principal como la carpeta historial
+        git add README.md historial/
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización e historial automático de vuelos" && git push)
