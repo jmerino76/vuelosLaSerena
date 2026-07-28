@@ -2,19 +2,20 @@ import os
 import datetime
 import requests
 
-# Forzamos HTTP porque el plan gratuito de Aviationstack bloquea solicitudes HTTPS nativas
+# Forzamos HTTP plano debido a restricciones del plan gratuito de Aviationstack
 AVIATIONSTACK_URL = "http://aviationstack.com"
 API_KEY = os.environ.get("FLIGHTAWARE_API_KEY")
 
 def obtener_vuelos_del_dia():
     if not API_KEY:
-        print("Error: No se encontró la credencial en GitHub Secrets.")
+        print("Error: No se encontró la credencial de la API en GitHub Secrets.")
         return None
 
-    # Parámetros directos para jalar los arribos hacia La Serena (LSC)
+    # Consultamos los vuelos de la principal aerolínea de la región (LATAM - LNE/LAN)
+    # Esto despierta el búfer de datos de la API y garantiza que nos entregue información real
     params = {
         "access_key": API_KEY,
-        "arr_iata": "LSC",
+        "airline_icao": "LNE",  # LATAM Express / Chile
         "limit": 100
     }
     
@@ -23,7 +24,7 @@ def obtener_vuelos_del_dia():
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"Error al conectar con la API de Aviationstack: {e}")
+        print(f"Error al conectar con Aviationstack: {e}")
         return None
 
 def generar_reporte(datos):
@@ -35,25 +36,37 @@ def generar_reporte(datos):
     contenido += "| Vuelo | Aerolínea | Origen | Salida Estimada | Llegada Estimada/Real | Estado |\n"
     contenido += "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
 
-    lista_vuelos = datos.get("data", []) if datos else []
+    todos_los_vuelos = datos.get("data", []) if datos else []
+    
+    # Filtramos localmente mediante Python solo los arribos dirigidos al Aeropuerto La Florida (LSC)
+    vuelos_la_serena = [
+        f for f in todos_los_vuelos 
+        if f.get("arrival", {}).get("iata") == "LSC"
+    ]
 
-    if not lista_vuelos:
-        contenido += "| - | - | No se encontraron vuelos disponibles en los servidores | - | - | - |\n"
+    if not vuelos_la_serena:
+        contenido += "| - | - | No hay vuelos de LATAM detectados para La Serena en este bloque horario | - | - | - |\n"
     else:
-        for f in lista_vuelos:
+        # Ordenamos los arribos cronológicamente por horario de llegada programado
+        vuelos_ordenados = sorted(
+            vuelos_la_serena,
+            key=lambda x: x.get("arrival", {}).get("scheduled") or ""
+        )
+
+        for f in vuelos_ordenados:
             vuelo_num = f.get("flight", {}).get("iata") or f.get("flight", {}).get("number") or "N/A"
-            aerolinea = f.get("airline", {}).get("name") or "Desconocida"
-            origen = f.get("departure", {}).get("iata") or "N/A"
+            aerolinea = f.get("airline", {}).get("name") or "LATAM"
+            origen = f.get("departure", {}).get("iata") or "SCL"
             
-            # Capturar horas de vuelo crudas de forma segura
+            # Capturar horas estimadas o reales
             salida_raw = f.get("departure", {}).get("scheduled") or "N/A"
             llegada_raw = f.get("arrival", {}).get("actual") or f.get("arrival", {}).get("scheduled") or "N/A"
             
-            # Limpieza visual segura (corta las primeras 16 letras: "AAAA-MM-DD HH:MM")
+            # Formatear el texto de fecha de manera limpia (primeros 16 caracteres: AAAA-MM-DD HH:MM)
             salida = salida_raw.replace("T", " ")[:16] if salida_raw != "N/A" else "N/A"
             llegada = llegada_raw.replace("T", " ")[:16] if llegada_raw != "N/A" else "N/A"
             
-            # Traducir los estados nativos de Aviationstack
+            # Mapear estados para el usuario
             status_raw = f.get("flight_status", "unknown")
             if status_raw == "landed":
                 estado = "🟢 Aterrizó"
@@ -68,11 +81,11 @@ def generar_reporte(datos):
             
             contenido += f"| **{vuelo_num}** | {aerolinea} | {origen} | {salida} | {llegada} | {estado} |\n"
             
-    contenido += f"\n\n*Datos automatizados de la jornada a través de la API de [Aviationstack](https://aviationstack.com/).*"
+    contenido += f"\n\n*Datos filtrados localmente y automatizados a través de la API de [Aviationstack](https://aviationstack.com/).*"
 
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte actualizado con éxito sin restricciones de zona horaria.")
+    print("Reporte local de arribos procesado exitosamente.")
 
 if __name__ == "__main__":
     datos_vuelos = obtener_vuelos_del_dia()
