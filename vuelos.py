@@ -16,97 +16,112 @@ def obtener_vuelos_oficiales():
         print(f"Error al conectar con el Aeropuerto de La Serena: {e}")
         return None
 
-def procesar_bloque_vuelos(soup, id_contenedor):
-    # Localizamos el contenedor específico en la página web (ej: 'llegadas' o 'salidas')
-    contenedor = soup.find(id=id_contenedor) or soup.find(class_=id_contenedor)
-    vuelos_procesados = []
-    vistos = set()
-
-    if not contenedor:
-        return vuelos_procesados
-
-    # Recorremos las filas de la tabla dentro de ese contenedor específico
-    for fila in contenedor.find_all("tr"):
-        celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
-        
-        if len(celdas) >= 7:
-            vuelo_raw = celdas[1]
-            ciudad = celdas[2]
-            fecha = celdas[3]
-            hora = celdas[4]
-            cinta_o_puerta = celdas[5]
-            estado_raw = celdas[6].upper()
-
-            if not vuelo_raw or vuelo_raw == "N/A":
-                continue
-
-            # ✈️ Identificación infalible por Logotipo en el HTML
-            aerolinea = "Desconocida ⚪"
-            img_tag = fila.find("img")
-            if img_tag and img_tag.get("src"):
-                src_lower = img_tag["src"].lower()
-                if "sky" in src_lower:
-                    aerolinea = "Sky Airline 🟢"
-                elif "latam" in src_lower or "lan" in src_lower:
-                    aerolinea = "LATAM Airlines 🔵"
-                elif "jetsmart" in src_lower or "smart" in src_lower:
-                    aerolinea = "JetSmart 🔴"
-
-            # Control de desvíos si la hora se desplaza a la columna de cinta/puerta
-            if ":" in cinta_o_puerta:
-                hora = cinta_o_puerta
-                cinta_o_puerta = "Por confirmar"
-                estado_raw = "RETRASADO"
-
-            # Evitar duplicados exactos en el búfer
-            clave_vuelo = f"{vuelo_raw}-{hora}"
-            if clave_vuelo in vistas_bloque:
-                continue
-            vistas_bloque.add(clave_vuelo)
-
-            # Clasificación de estados
-            if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢", "FIN"]):
-                estado = "🟢 Aterrizó"
-            elif any(x in estado_raw for x in ["DESPEGÓ", "DEPARTED", "🛫"]):
-                estado = "🛫 Despegó"
-            elif any(x in estado_raw for x in ["RUTA", "VUELO", "🔵", "EN CURSO"]):
-                estado = "🔵 En Ruta"
-            elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
-                estado = "🔴 Retrasado"
-            else:
-                estado = "⚪ Programado"
-
-            vuelos_procesados.append({
-                "aerolinea": aerolinea,
-                "vuelo": vuelo_raw,
-                "ciudad": ciudad,
-                "fecha": fecha,
-                "hora": hora,
-                "cinta_o_puerta": cinta_o_puerta,
-                "estado": estado
-            })
-            
-    return vuelos_procesados
-
 def generar_reporte(html):
     zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
     ahora_local = datetime.datetime.now(zona_chile).strftime("%Y-%m-%d %H:%M:%S")
     
-    global vistas_bloque
-    soup = BeautifulSoup(html, "html.parser")
-    
-    # Procesamos las dos secciones de forma totalmente aislada
-    vistas_bloque = set()
-    llegadas = procesar_bloque_vuelos(soup, "llegadas")
-    
-    vistas_bloque = set()
-    salidas = procesar_bloque_vuelos(soup, "salidas")
-
-    # Construcción del archivo Markdown estructurado
     contenido = f"# ✈️ Estado de Vuelos en Tiempo Real - La Serena (SCSE / LSC)\n\n"
     contenido += f"Última actualización: `{ahora_local} (Hora Local Chile)`\n\n"
     
-    # --- SECCIÓN 1: LLEGADAS ---
+    llegadas = []
+    salidas = []
+    vistos = set()
+
+    if html:
+        soup = BeautifulSoup(html, "html.parser")
+        
+        # Buscamos todas las filas de datos que contengan celdas internas (td o div de celdas)
+        for fila in soup.find_all(["tr", "div"]):
+            # Extraemos los textos de los elementos hijos inmediatos para simular las columnas
+            celdas = [c.get_text(strip=True) for c in fila.find_all(["td", "div"], recursive=False)]
+            
+            # Limpiamos las celdas vacías del array
+            celdas = [c for c in celdas if c]
+
+            # Si el bloque contiene la estructura de 7 datos oficiales de un vuelo
+            if len(celdas) >= 6:
+                texto_completo = " ".join(celdas).upper()
+                
+                # Descartamos si es una fila de encabezados
+                if "VUELO" in texto_completo or "ORIGEN" in texto_completo or "DESTINO" in texto_completo:
+                    continue
+                
+                # Mapeo universal de variables basado en la posición de los datos
+                vuelo_raw = celdas[0] if len(celdas) > 0 else "N/A"
+                ciudad = celdas[1] if len(celdas) > 1 else "N/A"
+                fecha = celdas[2] if len(celdas) > 2 else "N/A"
+                hora = celdas[3] if len(celdas) > 3 else "N/A"
+                cinta_o_puerta = celdas[4] if len(celdas) > 4 else "Por confirmar"
+                estado_raw = celdas[5].upper() if len(celdas) > 5 else "PROGRAMADO"
+
+                # Si no hay número de vuelo válido, saltamos la fila
+                if not vuelo_raw or len(vuelo_raw) > 10:
+                    continue
+
+                # 🖼️ Extracción del Logotipo gráfico o asignación inteligente
+                aerolinea = "Desconocida"
+                img_tag = fila.find("img")
+                src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
+                
+                if "sky" in src_lower or vuelo_raw.startswith("H2") or len(vuelo_raw) == 3:
+                    aerolinea = '<img src="https://skyairline.com" width="16" height="16"> **Sky**'
+                    if not vuelo_raw.startswith("H2"): vuelo_raw = f"H2 {vuelo_raw}"
+                elif "jetsmart" in src_lower or "smart" in src_lower or vuelo_raw.startswith("JA") or (vuelo_raw.isdigit() and 300 <= int(vuelo_raw) <= 399):
+                    aerolinea = '<img src="https://jetsmart.com" width="16" height="16"> **JetSmart**'
+                    if not vuelo_raw.startswith("JA"): vuelo_raw = f"JA {vuelo_raw}"
+                else:
+                    aerolinea = '<img src="https://latamairlines.com" width="16" height="16"> **LATAM**'
+                    if not vuelo_raw.startswith("LA"): vuelo_raw = f"LA {vuelo_raw}"
+
+                # Parche si la hora se desplazó por un retraso
+                if ":" in cinta_o_puerta:
+                    hora = cinta_o_puerta
+                    cinta_o_puerta = "Por confirmar"
+                    estado_raw = "RETRASADO"
+
+                # Clasificación de la iconografía de estados
+                if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢", "FIN"]):
+                    estado = "🟢 Aterrizó"
+                elif any(x in estado_raw for x in ["DESPEGÓ", "DEPARTED", "🛫"]):
+                    estado = "🛫 Despegó"
+                elif any(x in estado_raw for x in ["RUTA", "VUELO", "🔵"]):
+                    estado = "🔵 En Ruta"
+                elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
+                    estado = "🔴 Retrasado"
+                else:
+                    estado = "⚪ Programado"
+
+                datos_vuelo = {
+                    "aerolinea": aerolinea,
+                    "vuelo": vuelo_raw,
+                    "ciudad": ciudad,
+                    "fecha": fecha,
+                    "hora": hora,
+                    "cinta_o_puerta": cinta_o_puerta,
+                    "estado": estado
+                }
+
+                # Evitamos duplicados en la lectura total
+                clave_vuelo = f"{vuelo_raw}-{hora}"
+                if clave_vuelo in vistos:
+                    continue
+                vistos.add(clave_vuelo)
+
+                # 🗂️ Criterio de separación automática:
+                # El sitio web usa componentes estructurales diferentes o palabras clave para clasificar
+                # Si el contenedor superior o la fila hereda clases de despegues/salidas o arribos
+                fila_texto_total = str(fila).upper()
+                if "SALIDA" in fila_texto_total or "DEPARTURE" in fila_texto_total or "DESPEG" in estado_raw:
+                    salidas.append(datos_vuelo)
+                elif "LLEGADA" in fila_texto_total or "ARRIVAL" in fila_texto_total or "ATERRIZ" in estado_raw:
+                    llegadas.append(datos_vuelo)
+                else:
+                    # Fallback analítico: si la hora es muy tardía o según flujos normales lo dejamos en arribos hoy
+                    llegadas.append(datos_vuelo)
+
+    # --- RENDERIZADO EN EL ARCHIVO MARKDOWN ---
+    
+    # 🛬 TABLA DE ARRIVOS
     contenido += f"## 🛬 Próximas Llegadas (Arribos)\n\n"
     contenido += "| Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |\n"
     contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
@@ -118,7 +133,7 @@ def generar_reporte(html):
 
     contenido += f"\n---\n\n"
 
-    # --- SECCIÓN 2: SALIDAS ---
+    # 🛫 TABLA DE DESPEGUES
     contenido += f"## 🛫 Próximas Salidas (Despegues)\n\n"
     contenido += "| Aerolínea | Vuelo | Destino | Fecha | Hora Real/Est. | Puerta | Estado |\n"
     contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
@@ -132,9 +147,8 @@ def generar_reporte(html):
 
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte Markdown corregido, separado y validado con éxito.")
+    print("Reporte Markdown con mapeo de divs modernos generado con éxito.")
 
 if __name__ == "__main__":
     html_data = obtener_vuelos_oficiales()
-    if html_data:
-        generar_reporte(html_data)
+    generar_reporte(html_data)
