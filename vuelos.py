@@ -36,54 +36,49 @@ def generar_reporte(html):
             
             if len(celdas) >= 6:
                 vuelo_raw = celdas
-                origen = celdas
+                origen_raw = celdas
                 fecha = celdas
                 hora = celdas
                 cinta_o_puerta = celdas
                 estado_raw = celdas.upper() if len(celdas) > 6 else "PROGRAMADO"
 
-                # Filtrar textos basura de menús
+                # Filtrar textos basura o menús comerciales del aeropuerto
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
                     continue
 
-                vuelo_num_int = int(digitos)
+                # 🕵️‍♂️ FILTRO GEOGRÁFICO ESTRICTO:
+                # Si el origen es "LA SERENA", significa que el vuelo está saliendo.
+                # Solo aceptamos ciudades que apunten a un arribo hacia LSC.
+                origen = origen_raw.upper()
+                if "LA SERENA" in origen or "SERENA" in origen:
+                    continue
                 
-                # 🖼️ Identificación real de la Aerolínea según el logo de la fila
+                # Forzar origen correcto si la celda venía vacía o con texto erróneo
+                if not any(x in origen for x in ["SANTIAGO", "ANTOFAGASTA", "IQUIQUE", "CALAMA"]):
+                    continue
+
+                # 🖼️ Identificación real de Aerolínea basada en las imágenes de la fila
                 img_tag = fila.find("img")
                 src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
                 
-                is_sky = "sky" in src_lower or "h2" in vuelo_raw.lower()
-                is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= vuelo_num_int <= 399)
-                
-                # 🕵️‍♂️ FILTRO MATEMÁTICO ESTRICTO CONTRA SALIDAS
-                # Descartamos las numeraciones que corresponden a despegues
-                if is_sky:
-                    # En Sky, las salidas son PARES (1720, 106, 1742). Los arribos son IMPARES.
-                    if vuelo_num_int % 2 == 0:
-                        continue
+                if "sky" in src_lower or "h2" in vuelo_raw.lower():
                     aerolinea = '<img src="https://skyairline.com" width="16" height="16"> **Sky**'
                     vuelo_num = f"H2 {digitos}"
-                elif is_jetsmart:
-                    # En JetSmart, las salidas son IMPARES (321). Los arribos son PARES (320).
-                    if vuelo_num_int % 2 != 0:
-                        continue
+                elif "smart" in src_lower or "ja" in vuelo_raw.lower():
                     aerolinea = '<img src="https://jetsmart.com" width="16" height="16"> **JetSmart**'
                     vuelo_num = f"JA {digitos}"
                 else:
-                    # En LATAM, las salidas son IMPARES (109, 107, 1723). Los arribos son PARES (106, 102, 100, 1272).
-                    if vuelo_num_int % 2 != 0:
-                        continue
                     aerolinea = '<img src="https://latamairlines.com" width="16" height="16"> **LATAM**'
                     vuelo_num = f"LA {digitos}"
 
-                # Reparación de celdas si la hora se movió por un retraso
+                # Reparación de celdas si la hora se desplazó por un retraso en la pantalla
                 if ":" in cinta_o_puerta:
                     hora = cinta_o_puerta
                     cinta_o_puerta = "Por confirmar"
                     if "RETRASADO" not in estado_raw: estado_raw = "RETRASADO"
 
-                # Formateo gráfico de estados reales de llegada
+                # Formateo gráfico de los estados de llegada
                 if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢", "FIN"]):
                     estado = "🟢 Aterrizó"
                 elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
@@ -94,7 +89,7 @@ def generar_reporte(html):
                 datos_vuelo = {
                     "aerolinea": aerolinea,
                     "vuelo": vuelo_num,
-                    "origen": origen.upper(),
+                    "origen": origen,
                     "fecha": fecha,
                     "hora": hora,
                     "cinta": "Por confirmar" if cinta_o_puerta == "Por confirmar" else f"🧳 {cinta_o_puerta}",
@@ -103,7 +98,7 @@ def generar_reporte(html):
                     "sort_hora": hora
                 }
 
-                # Evitar duplicaciones duplicadas
+                # Evitar registros duplicados exactos en el Markdown
                 clave_vuelo = f"{vuelo_num}-{fecha}-{hora}"
                 if clave_vuelo in vistos:
                     continue
@@ -113,7 +108,7 @@ def generar_reporte(html):
     if not llegadas:
         contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
     else:
-        # Ordenamiento cronológico doble estricto (Año-Mes-Día + Hora)
+        # Ordenamiento cronológico doble estricto (Año-Mes-Día + Hora de menor a mayor)
         llegadas_ordenadas = sorted(
             llegadas,
             key=lambda x: (
@@ -125,10 +120,10 @@ def generar_reporte(html):
         for v in llegadas_ordenadas:
             contenido += f"| {v['aerolinea']} | **{v['vuelo']}** | {v['origen']} | {v['fecha']} | {v['hora']} | {v['cinta']} | {v['estado']} |\n"
 
-    contenido += f"\n\n*Datos de arribos exclusivos filtrados y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*"
+    contenido += f"\n\n*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*"
 
     with open("README.md", "w", encoding="utf-8") as archivo:
-        archivo.write(archivo.read() if False else contenido) # Escritura limpia segura
+        archivo.write(contenido)
     print("Reporte de arribos purificado de salidas generado con éxito.")
 
 if __name__ == "__main__":
