@@ -2,14 +2,15 @@ name: Actualizar Vuelos La Serena
 
 on:
   schedule:
-    - cron: '0 * * * *' # Ejecución automática cada una hora
-  workflow_dispatch: # Permite ejecución manual con el botón "Run workflow"
+    # Se ejecuta automáticamente cada 6 horas (a las 00:00, 06:00, 12:00 y 18:00 UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Mantiene activo el botón verde para pruebas manuales
 
 jobs:
   actualizar:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Permiso obligatorio para que el bot edite tu repositorio
+      contents: write
 
     steps:
     - name: Clonar repositorio
@@ -28,6 +29,7 @@ jobs:
     - name: Consultar API y Generar Reporte
       env:
         FLIGHTAWARE_API_KEY: ${{ secrets.FLIGHTAWARE_API_KEY }}
+        GOOGLE_SHEETS_URL: ${{ secrets.GOOGLE_SHEETS_URL }}
       run: python vuelos.py
 
     - name: Guardar cambios en el repositorio
