@@ -2,7 +2,7 @@ import os
 import datetime
 import requests
 
-# Volvemos al endpoint específico de llegadas de AeroAPI
+# Usamos el endpoint unificado de vuelos del aeropuerto
 AEROAPI_URL = "https://flightaware.com"
 API_KEY = os.environ.get("FLIGHTAWARE_API_KEY")
 
@@ -11,21 +11,22 @@ def obtener_vuelos_del_dia():
         print("Error: No se encontró la variable de entorno FLIGHTAWARE_API_KEY.")
         return None
 
-    # Calculamos cuántas horas han pasado en Chile desde la medianoche (00:00)
+    # 1. Definir la zona horaria de Chile (UTC-4)
     zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
     ahora_chile = datetime.datetime.now(zona_chile)
     
-    # Para capturar todo el día, forzamos un inicio temprano en formato ISO absoluto o relativo
-    # Calculamos los minutos transcurridos desde las 00:00 hasta la hora actual
-    minutos_desde_medianoche = (ahora_chile.hour * 60) + ahora_chile.minute
+    # 2. Calcular la medianoche (00:00 AM) de hoy en Chile
+    inicio_chile = ahora_chile.replace(hour=0, minute=0, second=0, microsecond=0)
     
+    # 3. Convertir esa medianoche exacta a la hora UTC que entiende FlightAware
+    inicio_utc = inicio_chile.astimezone(datetime.timezone.utc)
+
     headers = {"x-apikey": API_KEY}
     
-    # Parámetros oficiales: 'start' le dice a la API el momento inicial relativo o absoluto
-    # Usamos una ventana de tiempo amplia para capturar los vuelos que llegaron temprano hoy
+    # Pasamos el parámetro 'start' con la medianoche en formato ISO UTC exacto
     params = {
-        "start": f"-{minutos_desde_medianoche} minutes", 
-        "max_pages": 1
+        "start": inicio_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "max_pages": 2 # Pedimos hasta 2 páginas para asegurar capturar todo el día
     }
     
     try:
@@ -45,28 +46,43 @@ def generar_reporte(datos):
     contenido += "| Vuelo | Origen | Salida Estimada | Llegada Estimada/Real | Estado |\n"
     contenido += "| :--- | :--- | :--- | :--- | :--- |\n"
 
-    if not datos or "arrivals" not in datos or not datos["arrivals"]:
+    lista_vuelos = []
+    if datos:
+        # Extraemos tanto las llegadas confirmadas (arrivals) como las programadas (scheduled_arrivals)
+        if "arrivals" in datos and datos["arrivals"]:
+            lista_vuelos.extend(datos["arrivals"])
+        if "scheduled_arrivals" in datos and datos["scheduled_arrivals"]:
+            lista_vuelos.extend(datos["scheduled_arrivals"])
+
+    if not lista_vuelos:
         contenido += "| - | No se encontraron registros de vuelos para la jornada de hoy | - | - | - |\n"
     else:
-        # Ordenamos cronológicamente por hora de llegada estimada en pista
+        # Ordenamos los vuelos cronológicamente basándonos en la hora de llegada programada o estimada
         vuelos_ordenados = sorted(
-            datos["arrivals"], 
+            lista_vuelos, 
             key=lambda x: x.get("estimated_on") or x.get("scheduled_on") or ""
         )
 
+        vistos = set()
         for vuelo in vuelos_ordenados:
             ident = vuelo.get("ident", "N/A")
-            origen = vuelo.get("origin", {}).get("code", "N/A")
             
+            # Evitar duplicados si un vuelo se solapa entre listas internas de la API
+            if ident in vistos and ident != "N/A":
+                continue
+            vistos.add(ident)
+            
+            origen = vuelo.get("origin", {}).get("code", "N/A")
             salida_t = vuelo.get("estimated_off") or vuelo.get("scheduled_off") or "N/A"
             llegada_t = vuelo.get("actual_on") or vuelo.get("estimated_on") or vuelo.get("scheduled_on") or "N/A"
             
-            # Limpiar formatos y cortar strings ISO
+            # Ajustamos el formato visual recortando los segundos y la letra Z
             salida = salida_t.replace("T", " ").replace("Z", "")[:16]
             llegada = llegada_t.replace("T", " ").replace("Z", "")[:16]
             
             estado = vuelo.get("status", "Desconocido")
             
+            # Formatear el estado visual de forma amigable
             if "Arrived" in estado:
                 estado = "🟢 Aterrizó"
             elif "En Route" in estado:
@@ -80,7 +96,7 @@ def generar_reporte(datos):
 
     with open("README.md", "w", encoding="utf-8") as f:
         f.write(contenido)
-    print("Reporte diario regenerado de forma exitosa.")
+    print("Reporte de vuelos diarios unificado actualizado con éxito.")
 
 if __name__ == "__main__":
     datos_vuelos = obtener_vuelos_del_dia()
