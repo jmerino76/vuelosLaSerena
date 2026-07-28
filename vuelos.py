@@ -72,6 +72,7 @@ def generar_reporte(html):
     contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
     
     llegadas = []
+    llegadas_ordenadas = [] # ⬅️ CORRECCIÓN: Definimos la variable vacía al inicio
     vistos = set()
 
     if html:
@@ -81,13 +82,12 @@ def generar_reporte(html):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
             if len(celdas) >= 6:
-                vuelo_raw = celdas[0]
-                origen_raw = celdas[1]
-                fecha = celdas[2]
-                hora = celdas[3]
-                cinta_raw = celdas[4]
-                # CORRECCIÓN: Leemos de forma aislada la celda número 6 del array de texto
-                estado_raw = celdas[5].upper() if len(celdas) > 5 else "PROGRAMADO"
+                vuelo_raw = celdas[1]
+                origen_raw = celdas[2]
+                fecha = celdas[3]
+                hora = celdas[4]
+                cinta_raw = celdas[5]
+                estado_raw = celdas[6].upper() if len(celdas) > 6 else "PROGRAMADO"
 
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
