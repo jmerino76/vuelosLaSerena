@@ -1,10 +1,10 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-07-28 15:44:39 (Hora Local Chile)`
+Última actualización del reporte: `2026-07-28 15:47:52 (Hora Local Chile)`
 
 | Vuelo | Aerolínea | Origen | Salida Estimada | Llegada Estimada/Real | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| - | - | No se encontraron vuelos disponibles en los servidores | - | - | - |
+| - | - | No hay vuelos de LATAM detectados para La Serena en este bloque horario | - | - | - |
 
 
-*Datos automatizados de la jornada a través de la API de [Aviationstack](https://aviationstack.com/).*
+*Datos filtrados localmente y automatizados a través de la API de [Aviationstack](https://aviationstack.com/).*
