@@ -34,51 +34,45 @@ def generar_reporte(html):
         for fila in soup.find_all("tr"):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
-            # Validamos que la fila cuente con al menos las 6 columnas base de datos
             if len(celdas) >= 6:
                 vuelo_raw = celdas[1]
-                origen_raw = celdas[2]
+                origen = celdas[2].upper()
                 fecha = celdas[3]
                 hora = celdas[4]
-                cinta_o_puerta = celdas[5]
-                # Corrección de la lista al índice exacto de la celda de estado
+                cinta_raw = celdas[5]
                 estado_raw = celdas[6].upper() if len(celdas) > 6 else "PROGRAMADO"
 
-                # Filtrar textos basura del menú o componentes comerciales del aeropuerto
+                # Filtrar textos basura o menús comerciales
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
                     continue
 
-                # 🕵️‍♂️ FILTRO GEOGRÁFICO DEFINITIVO CONTRA SALIDAS:
-                origen = origen_raw.upper()
-                if "LA SERENA" in origen or "SERENA" in origen:
-                    continue
-                
-                # Validamos que el origen apunte estrictamente a un arribo hacia LSC
-                if not any(x in origen for x in ["SANTIAGO", "ANTOFAGASTA", "IQUIQUE", "CALAMA"]):
+                vuelo_num_int = int(digitos)
+
+                # 🕵️‍♂️ FILTRO DEFINITIVO ULTRAESTRICTO CONTRA SALIDAS:
+                # Si la columna de la cinta contiene un formato de hora (ej: 17:11, 17:34, 21:59)
+                # significa que es el horario de despegue de una salida. Los arribos usan números sueltos (1, 2) o vacíos.
+                if ":" in cinta_raw:
                     continue
 
-                # 🖼️ Identificación real de Aerolínea basada en las imágenes o prefijos
+                # 🖼️ Identificación real de Aerolínea basada en las imágenes oficiales de la fila
                 img_tag = fila.find("img")
                 src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
                 
                 if "sky" in src_lower or "h2" in vuelo_raw.lower():
                     aerolinea = '<img src="https://skyairline.com" width="16" height="16"> **Sky**'
                     vuelo_num = f"H2 {digitos}"
-                elif "smart" in src_lower or "ja" in vuelo_raw.lower():
+                elif "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= vuelo_num_int <= 399):
                     aerolinea = '<img src="https://jetsmart.com" width="16" height="16"> **JetSmart**'
                     vuelo_num = f"JA {digitos}"
                 else:
                     aerolinea = '<img src="https://latamairlines.com" width="16" height="16"> **LATAM**'
                     vuelo_num = f"LA {digitos}"
 
-                # Reparación de celdas si la hora se desplazó por un retraso en la pantalla
-                if ":" in cinta_o_puerta:
-                    hora = cinta_o_puerta
-                    cinta_o_puerta = "Por confirmar"
-                    if "RETRASADO" not in estado_raw: estado_raw = "RETRASADO"
+                # Formatear el texto de la cinta de equipaje de forma limpia
+                cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
 
-                # Formateo gráfico de los estados de llegada
+                # Formateo gráfico de los estados reales de llegada
                 if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢", "FIN"]):
                     estado = "🟢 Aterrizó"
                 elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
@@ -92,7 +86,7 @@ def generar_reporte(html):
                     "origen": origen,
                     "fecha": fecha,
                     "hora": hora,
-                    "cinta": "Por confirmar" if cinta_o_puerta == "Por confirmar" else f"🧳 {cinta_o_puerta}",
+                    "cinta": cinta,
                     "estado": estado,
                     "sort_fecha": fecha,
                     "sort_hora": hora
@@ -124,7 +118,7 @@ def generar_reporte(html):
 
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte de arribos purificado de salidas generado con éxito.")
+    print("Reporte de arribos purificado de salidas generado con éxito por filtro de cinta.")
 
 if __name__ == "__main__":
     html_data = obtener_vuelos_oficiales()
