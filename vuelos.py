@@ -64,7 +64,8 @@ def enviar_a_google_sheets(llegadas, ahora_local):
 
 def generar_reporte(html):
     zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
-    ahora_local = datetime.datetime.now(zona_chile).strftime("%Y-%m-%d %H:%M:%S")
+    ahora_dt = datetime.datetime.now(zona_chile)
+    ahora_local = ahora_dt.strftime("%Y-%m-%d %H:%M:%S")
     
     contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)\n\n"
     contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
@@ -78,12 +79,8 @@ def generar_reporte(html):
     if html:
         soup = BeautifulSoup(html, "html.parser")
         
-        # Buscamos todas las tablas disponibles en la página para validar cuál es la de arribos
         for tabla in soup.find_all("table"):
             encabezado_texto = tabla.get_text().upper()
-            
-            # 🛡️ FILTRO DE PESTAÑA: Solo procesamos la tabla si contiene las columnas de Llegadas (ORIGEN o CINTA)
-            # Si dice EMBARQUE o PUERTA, nos saltamos esa tabla por completo porque es la pestaña de salidas
             if "EMBARQUE" in encabezado_texto or "PUERTA" in encabezado_texto:
                 continue
                 
@@ -92,7 +89,7 @@ def generar_reporte(html):
                 
                 if len(celdas) >= 6:
                     vuelo_raw = celdas[1]
-                    origen = celdas[2].upper()
+                    origen_raw = celdas[2]
                     fecha = celdas[3]
                     hora = celdas[4]
                     cinta_raw = celdas[5]
@@ -102,11 +99,13 @@ def generar_reporte(html):
                     if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
                         continue
 
-                    # Ignorar si por error marca como origen La Serena
+                    if ":" in cinta_raw:
+                        continue
+
+                    origen = origen_raw.upper()
                     if "SERENA" in origen:
                         continue
 
-                    # 🖼️ Identificación real de Aerolínea basada en las imágenes o rangos numéricos conocidos
                     img_tag = fila.find("img")
                     src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
                     
@@ -168,8 +167,20 @@ def generar_reporte(html):
         for v in llegadas_ordenadas:
             contenido += f"| {v['aerolinea']} | **{v['vuelo']}** | {v['origen']} | {v['fecha']} | {v['hora']} | {v['cinta']} | {v['estado']} |\n"
 
+    contenido += f"\n\n*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*"
+
+    # 1. Escritura del archivo README.md principal (Portada)
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
+        
+    # 2. 📂 CREACIÓN DEL HISTORIAL AUTOMÁTICO
+    # Creamos la carpeta 'historial' si no existe
+    os.makedirs("historial", exist_ok=True)
+    # Formateamos el nombre del archivo con año, mes, día, hora y minuto (Ej: arribos_2026-07-28_18-40.md)
+    nombre_historial = ahora_dt.strftime("historial/arribos_%Y-%m-%d_%H-%M.md")
+    with open(nombre_historial, "w", encoding="utf-8") as archivo_historial:
+        archivo_historial.write(contenido)
+    print(f"Copia histórica guardada en: {nombre_historial}")
         
     enviar_a_google_sheets(llegadas_ordenadas, ahora_local)
 
