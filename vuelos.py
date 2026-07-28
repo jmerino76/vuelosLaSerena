@@ -43,36 +43,42 @@ def generar_reporte(html):
             for fila in filas_vuelos:
                 celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
-                # Ajustamos los índices según la estructura real de la página
+                # Procesamos solo si la fila tiene la estructura completa de celdas
                 if len(celdas) >= 4:
-                    vuelo_raw = celdas[0]
-                    origen = celdas[1]
-                    fecha_hora = celdas[2]
-                    estado_raw = celdas[3].upper() if len(celdas) > 3 else "PROGRAMADO"
+                    # Corrección de índices basada en el desplazamiento real del HTML
+                    vuelo_raw = celdas[1] if len(celdas) > 1 else "N/A"
+                    origen = celdas[2] if len(celdas) > 2 else "N/A"
+                    fecha_hora = celdas[3] if len(celdas) > 3 else "N/A"
+                    estado_raw = celdas[4].upper() if len(celdas) > 4 else "PROGRAMADO"
                     
-                    # Identificar aerolínea según el formato del vuelo
+                    if not vuelo_raw or vuelo_raw == "N/A":
+                        continue
+
+                    # Identificar la aerolínea chilena de manera inteligente según su numeración
                     if vuelo_raw.startswith("H2") or len(vuelo_raw) == 3:
                         aerolinea = "Sky Airline 🟢"
                         vuelo = f"H2 {vuelo_raw}" if not vuelo_raw.startswith("H2") else vuelo_raw
-                    elif vuelo_raw.startswith("JA") or (vuelo_raw.isdigit() and int(vuelo_raw) >= 300 and int(vuelo_raw) <= 399):
+                    elif vuelo_raw.startswith("JA") or (vuelo_raw.isdigit() and 300 <= int(vuelo_raw) <= 399):
                         aerolinea = "JetSmart 🔴"
                         vuelo = f"JA {vuelo_raw}" if not vuelo_raw.startswith("JA") else vuelo_raw
                     else:
                         aerolinea = "LATAM Airlines 🔵"
                         vuelo = f"LA {vuelo_raw}" if not vuelo_raw.startswith("LA") else vuelo_raw
 
+                    # Crear llave única para evitar duplicados en la tabla Markdown
                     clave_vuelo = f"{vuelo}-{fecha_hora}"
                     if clave_vuelo in vistos:
                         continue
                     vistos.add(clave_vuelo)
 
-                    # Limpieza y formateo del estado visual
-                    if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢"]):
+                    # Formatear la iconografía del estado de vuelo
+                    if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢", "FIN"]):
                         estado = "🟢 Aterrizó"
-                    elif any(x in estado_raw for x in ["RUTA", "VUELO", "🔵"]):
+                    elif any(x in estado_raw for x in ["RUTA", "VUELO", "🔵", "RELAJADO"]):
                         estado = "🔵 En Ruta"
+                    elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
+                        estado = "🔴 Retrasado"
                     elif ":" in estado_raw or len(estado_raw) <= 2:
-                        # Si el estado es una hora estimada de retraso o un andén, está programado/confirmado
                         estado = f"⚪ Programado (Est: {estado_raw})" if ":" in estado_raw else "⚪ Programado"
                     else:
                         estado = f"⚪ {estado_raw.capitalize()}"
@@ -83,8 +89,9 @@ def generar_reporte(html):
 
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte Markdown corregido y ordenado con éxito.")
+    print("Reporte Markdown alineado con éxito.")
 
 if __name__ == "__main__":
+    html_data = obtener_v ऑफिशिएल्स() # Corrección de llamada interna
     html_data = obtener_vuelos_oficiales()
     generar_reporte(html_data)
