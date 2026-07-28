@@ -34,13 +34,15 @@ def generar_reporte(html):
         for fila in soup.find_all("tr"):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
+            # Validamos que la fila cuente con al menos las 6 columnas base de datos
             if len(celdas) >= 6:
-                vuelo_raw = celdas
-                origen_raw = celdas
-                fecha = celdas
-                hora = celdas
-                cinta_o_puerta = celdas
-                estado_raw = celdas.upper() if len(celdas) > 6 else "PROGRAMADO"
+                vuelo_raw = celdas[1]
+                origen_raw = celdas[2]
+                fecha = celdas[3]
+                hora = celdas[4]
+                cinta_o_puerta = celdas[5]
+                # Corrección de la lista al índice exacto de la celda de estado
+                estado_raw = celdas[6].upper() if len(celdas) > 6 else "PROGRAMADO"
 
                 # Filtrar textos basura del menú o componentes comerciales del aeropuerto
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
@@ -48,7 +50,6 @@ def generar_reporte(html):
                     continue
 
                 # 🕵️‍♂️ FILTRO GEOGRÁFICO DEFINITIVO CONTRA SALIDAS:
-                # Si el origen dice "LA SERENA", se trata de un despegue y se descarta automáticamente.
                 origen = origen_raw.upper()
                 if "LA SERENA" in origen or "SERENA" in origen:
                     continue
