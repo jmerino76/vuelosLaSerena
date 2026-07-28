@@ -2,14 +2,14 @@ name: Actualizar Vuelos La Serena
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
+    - cron: '0 * * * *' # Ejecución automática cada una hora
+  workflow_dispatch: # Permite ejecución manual con el botón "Run workflow"
 
 jobs:
   actualizar:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Permiso obligatorio para que el bot edite tu repositorio
 
     steps:
     - name: Clonar repositorio
@@ -29,3 +29,10 @@ jobs:
       env:
         FLIGHTAWARE_API_KEY: ${{ secrets.FLIGHTAWARE_API_KEY }}
       run: python vuelos.py
+
+    - name: Guardar cambios en el repositorio
+      run: |
+        git config --local user.email "github-actions[bot]@://github.com"
+        git config --local user.name "github-actions[bot]"
+        git add README.md
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización automática de estado de vuelos" && git push)
