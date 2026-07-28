@@ -78,78 +78,84 @@ def generar_reporte(html):
     if html:
         soup = BeautifulSoup(html, "html.parser")
         
-        for fila in soup.find_all("tr"):
-            celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
+        # Buscamos todas las tablas disponibles en la página para validar cuál es la de arribos
+        for tabla in soup.find_all("table"):
+            encabezado_texto = tabla.get_text().upper()
             
-            if len(celdas) >= 6:
-                vuelo_raw = celdas[0]
-                origen_raw = celdas[1]
-                fecha = celdas[2]
-                hora = celdas[3]
-                cinta_raw = celdas[4]
-                # CORRECCIÓN DEFINITIVA: Extraemos el texto de la última celda de forma directa
-                estado_raw = celdas[-1].upper() if len(celdas) >= 6 else "PROGRAMADO"
-
-                digitos = "".join(filter(str.isdigit, vuelo_raw))
-                if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
-                    continue
-
-                if ":" in cinta_raw:
-                    continue
-
-                origen = origen_raw.upper()
-                if "SERENA" in origen:
-                    continue
-
-                img_tag = fila.find("img")
-                src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
+            # 🛡️ FILTRO DE PESTAÑA: Solo procesamos la tabla si contiene las columnas de Llegadas (ORIGEN o CINTA)
+            # Si dice EMBARQUE o PUERTA, nos saltamos esa tabla por completo porque es la pestaña de salidas
+            if "EMBARQUE" in encabezado_texto or "PUERTA" in encabezado_texto:
+                continue
                 
-                is_sky = "sky" in src_lower or "h2" in vuelo_raw.lower()
-                is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= int(digitos) <= 399)
+            for fila in tabla.find_all("tr"):
+                celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
-                aerolinea_raw_text = "LATAM"
-                if is_sky:
-                    logo_static_url = "https://google.com"
-                    aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **Sky**'
-                    vuelo_num = f"H2 {digitos}"
-                    aerolinea_raw_text = "Sky"
-                elif is_jetsmart:
-                    logo_static_url = "https://google.com"
-                    aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **JetSmart**'
-                    vuelo_num = f"JA {digitos}"
-                    aerolinea_raw_text = "JetSmart"
-                else:
-                    logo_static_url = "https://google.com"
-                    aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **LATAM**'
-                    vuelo_num = f"LA {digitos}"
+                if len(celdas) >= 6:
+                    vuelo_raw = celdas[1]
+                    origen = celdas[2].upper()
+                    fecha = celdas[3]
+                    hora = celdas[4]
+                    cinta_raw = celdas[5]
+                    estado_raw = celdas[-1].upper() if len(celdas) >= 6 else "PROGRAMADO"
+
+                    digitos = "".join(filter(str.isdigit, vuelo_raw))
+                    if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
+                        continue
+
+                    # Ignorar si por error marca como origen La Serena
+                    if "SERENA" in origen:
+                        continue
+
+                    # 🖼️ Identificación real de Aerolínea basada en las imágenes o rangos numéricos conocidos
+                    img_tag = fila.find("img")
+                    src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
+                    
+                    is_sky = "sky" in src_lower or "h2" in vuelo_raw.lower() or digitos in ["1720", "1723", "1742"]
+                    is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or digitos == "321"
+                    
                     aerolinea_raw_text = "LATAM"
+                    if is_sky:
+                        logo_static_url = "https://google.com"
+                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **Sky**'
+                        vuelo_num = f"H2 {digitos}"
+                        aerolinea_raw_text = "Sky"
+                    elif is_jetsmart:
+                        logo_static_url = "https://google.com"
+                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **JetSmart**'
+                        vuelo_num = f"JA {digitos}"
+                        aerolinea_raw_text = "JetSmart"
+                    else:
+                        logo_static_url = "https://google.com"
+                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **LATAM**'
+                        vuelo_num = f"LA {digitos}"
+                        aerolinea_raw_text = "LATAM"
 
-                cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
+                    cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
 
-                if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "FIN"]):
-                    estado = "🟢 Aterrizó"
-                elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
-                    estado = "🔴 Retrasado"
-                else:
-                    estado = "⚪ Programado"
+                    if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "FIN"]):
+                        estado = "🟢 Aterrizó"
+                    elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
+                        estado = "🔴 Retrasado"
+                    else:
+                        estado = "⚪ Programado"
 
-                datos_vuelo = {
-                    "aerolinea": aerolinea,
-                    "aerolinea_raw_text": aerolinea_raw_text,
-                    "vuelo": vuelo_num,
-                    "origen": origen,
-                    "fecha": fecha,
-                    "hora": hora,
-                    "cinta": cinta,
-                    "estado": estado,
-                    "sort_fecha": fecha,
-                    "sort_hora": hora
-                }
+                    datos_vuelo = {
+                        "aerolinea": aerolinea,
+                        "aerolinea_raw_text": aerolinea_raw_text,
+                        "vuelo": vuelo_num,
+                        "origen": origen,
+                        "fecha": fecha,
+                        "hora": hora,
+                        "cinta": cinta,
+                        "estado": estado,
+                        "sort_fecha": fecha,
+                        "sort_hora": hora
+                    }
 
-                clave_vuelo = f"{vuelo_num}-{fecha}-{hora}"
-                if clave_vuelo in vistos: continue
-                vistos.add(clave_vuelo)
-                llegadas.append(datos_vuelo)
+                    clave_vuelo = f"{vuelo_num}-{fecha}-{hora}"
+                    if clave_vuelo in vistos: continue
+                    vistos.add(clave_vuelo)
+                    llegadas.append(datos_vuelo)
 
     if not llegadas:
         contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
