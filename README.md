@@ -1,6 +1,6 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-07-28 16:35:10 (Hora Local Chile)`
+Última actualización del reporte: `2026-07-28 16:43:07 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -15,8 +15,11 @@
 | <img src="https://jetsmart.com" width="16" height="16"> **JetSmart** | **JA 321** | ANTOFAGASTA | 28-07-2026 | 23:27 | 🧳 2 | 🔴 Retrasado |
 | <img src="https://jetsmart.com" width="16" height="16"> **JetSmart** | **JA 320** | ANTOFAGASTA | 28-07-2026 | 23:59 | Por confirmar | 🔴 Retrasado |
 | <img src="https://latamairlines.com" width="16" height="16"> **LATAM** | **LA 1273** | ANTOFAGASTA | 29-07-2026 | 04:50 | 🧳 2 | ⚪ Programado |
+| <img src="https://latamairlines.com" width="16" height="16"> **LATAM** | **LA 1273** | SANTIAGO | 29-07-2026 | 05:30 | Por confirmar | 🔴 Retrasado |
 | <img src="https://latamairlines.com" width="16" height="16"> **LATAM** | **LA 100** | SANTIAGO | 29-07-2026 | 09:00 | 🧳 2 | ⚪ Programado |
+| <img src="https://latamairlines.com" width="16" height="16"> **LATAM** | **LA 101** | SANTIAGO | 29-07-2026 | 09:40 | Por confirmar | 🔴 Retrasado |
 | <img src="https://skyairline.com" width="16" height="16"> **Sky** | **H2 1742** | SANTIAGO | 29-07-2026 | 10:31 | 🧳 1 | ⚪ Programado |
+| <img src="https://skyairline.com" width="16" height="16"> **Sky** | **H2 1742** | CALAMA | 29-07-2026 | 11:19 | Por confirmar | 🔴 Retrasado |
 
 
-*Datos de arribos totales ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*
+*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*
