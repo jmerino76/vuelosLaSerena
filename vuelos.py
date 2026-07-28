@@ -2,20 +2,20 @@ import os
 import datetime
 import requests
 
-# Cambiamos al endpoint oficial de arribos en tiempo real de Aviationstack
-AVIATIONSTACK_URL = "https://aviationstack.com"
-API_KEY = os.environ.get("FLIGHTAWARE_API_KEY") # Mantenemos el nombre de la variable de GitHub para no cambiar el archivo YML
+# Forzamos HTTP plano porque el plan gratuito de Aviationstack bloquea solicitudes HTTPS nativas
+AVIATIONSTACK_URL = "http://aviationstack.com"
+API_KEY = os.environ.get("FLIGHTAWARE_API_KEY")
 
 def obtener_vuelos_del_dia():
     if not API_KEY:
-        print("Error: No se encontró la credencial de la API en GitHub Secrets.")
+        print("Error: No se encontró la credencial en GitHub Secrets.")
         return None
 
-    # Parámetros oficiales de Aviationstack estructurados para La Serena (LSC)
+    # Parámetros directos para jalar los movimientos hacia La Serena (LSC)
     params = {
         "access_key": API_KEY,
-        "arr_iata": "LSC",      # Código IATA de La Serena
-        "limit": 100            # Límite amplio para capturar todos los vuelos de la jornada
+        "arr_iata": "LSC",
+        "limit": 50
     }
     
     try:
@@ -23,7 +23,7 @@ def obtener_vuelos_del_dia():
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"Error al conectar con Aviationstack: {e}")
+        print(f"Error al conectar con la API de Aviationstack: {e}")
         return None
 
 def generar_reporte(datos):
@@ -38,54 +38,46 @@ def generar_reporte(datos):
     lista_vuelos = datos.get("data", []) if datos else []
 
     if not lista_vuelos:
-        contenido += "| - | - | No se encontraron vuelos programados para hoy | - | - | - |\n"
+        contenido += "| - | - | No se encontraron vuelos disponibles en los servidores | - | - | - |\n"
     else:
-        # Filtrar para asegurarnos de que la API solo nos devuelva los vuelos del día de hoy
-        fecha_hoy_chile = datetime.datetime.now(zona_chile).strftime("%Y-%m-%d")
-        vuelos_hoy = [v for v in lista_vuelos if v.get("flight_date") == fecha_hoy_chile]
+        # Ordenar cronológicamente por hora de arribo programado
+        vuelos_ordenados = sorted(
+            lista_vuelos,
+            key=lambda x: x.get("arrival", {}).get("scheduled") or ""
+        )
 
-        if not vuelos_hoy:
-            contenido += "| - | - | No hay operaciones comerciales registradas para la fecha de hoy | - | - | - |\n"
-        else:
-            # Ordenar los vuelos por la hora programada de aterrizaje
-            vuelos_ordenados = sorted(
-                vuelos_hoy,
-                key=lambda x: x.get("arrival", {}).get("scheduled") or ""
-            )
-
-            for f in vuelos_ordenados:
-                vuelo_num = f.get("flight", {}).get("iata") or f.get("flight", {}).get("number") or "N/A"
-                aerolinea = f.get("airline", {}).get("name") or "Desconocida"
-                origen = f.get("departure", {}).get("iata") or "N/A"
-                
-                # Extraer tiempos de salida y llegada
-                salida_t = f.get("departure", {}).get("scheduled") or "N/A"
-                llegada_t = f.get("arrival", {}).get("actual") or f.get("arrival", {}).get("scheduled") or "N/A"
-                
-                # Limpieza de cadenas de texto ISO (sacar desvíos de zona horaria)
-                salida = salida_t.replace("T", " ").split("+")[0][:16]
-                llegada = llegada_t.replace("T", " ").split("+")[0][:16]
-                
-                # Traducir los estados nativos de Aviationstack
-                status_raw = f.get("flight_status", "unknown")
-                if status_raw == "landed":
-                    estado = "🟢 Aterrizó"
-                elif status_raw == "active":
-                    estado = "🔵 En Ruta"
-                elif status_raw == "scheduled":
-                    estado = "⚪ Programado"
-                elif status_raw == "cancelled":
-                    estado = "🔴 Cancelado"
-                else:
-                    estado = f"🔸 {status_raw.capitalize()}"
-                
-                contenido += f"| **{vuelo_num}** | {aerolinea} | {origen} | {salida} | {llegada} | {estado} |\n"
-                
-    contenido += f"\n\n*Datos diarios automatizados a través de la API de [Aviationstack](https://aviationstack.com).*"
+        for f in vuelos_ordenados:
+            vuelo_num = f.get("flight", {}).get("iata") or f.get("flight", {}).get("number") or "N/A"
+            aerolinea = f.get("airline", {}).get("name") or "Desconocida"
+            origen = f.get("departure", {}).get("iata") or "N/A"
+            
+            # Capturar horas de vuelo
+            salida_t = f.get("departure", {}).get("scheduled") or "N/A"
+            llegada_t = f.get("arrival", {}).get("actual") or f.get("arrival", {}).get("scheduled") or "N/A"
+            
+            # Limpiar el formato ISO separando la fecha y la hora
+            salida = salida_t.replace("T", " ").split("+")[0][:16]
+            llegada = llegada_t.replace("T", " ").split("+")[0][:16]
+            
+            status_raw = f.get("flight_status", "unknown")
+            if status_raw == "landed":
+                estado = "🟢 Aterrizó"
+            elif status_raw == "active":
+                estado = "🔵 En Ruta"
+            elif status_raw == "scheduled":
+                estado = "⚪ Programado"
+            elif status_raw == "cancelled":
+                estado = "🔴 Cancelado"
+            else:
+                estado = f"🔸 {status_raw.capitalize()}"
+            
+            contenido += f"| **{vuelo_num}** | {aerolinea} | {origen} | {salida} | {llegada} | {estado} |\n"
+            
+    contenido += f"\n\n*Datos automatizados de la jornada a través de la API de [Aviationstack](https://aviationstack.com/).*"
 
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte diario generado exitosamente mediante Aviationstack.")
+    print("Reporte actualizado con éxito sin restricciones de zona horaria.")
 
 if __name__ == "__main__":
     datos_vuelos = obtener_vuelos_del_dia()
