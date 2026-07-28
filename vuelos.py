@@ -24,14 +24,17 @@ def enviar_a_google_sheets(llegadas, ahora_local):
 
     vuelos_payload = []
     for v in llegadas:
+        # Sincronizamos las mismas URLs abiertas para Google Sheets
         if "Sky" in v["aerolinea_raw_text"] or "H2" in v["vuelo"]:
-            logo_url = "https://skyairline.com"
+            logo_url = "https://icons8.com" if False else "https://githubusercontent.com"
+            logo_url = "https://github.com" if False else "https://statvoo.com"
+            logo_url = "https://google.com"
             linea_txt = "Sky"
         elif "JetSmart" in v["aerolinea_raw_text"] or "JA" in v["vuelo"]:
-            logo_url = "https://jetsmart.com"
+            logo_url = "https://google.com"
             linea_txt = "JetSmart"
         else:
-            logo_url = "https://latamairlines.com"
+            logo_url = "https://google.com"
             linea_txt = "LATAM"
 
         vuelos_payload.append({
@@ -72,7 +75,7 @@ def generar_reporte(html):
     contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
     
     llegadas = []
-    llegadas_ordenadas = [] # ⬅️ CORRECCIÓN: Definimos la variable vacía al inicio
+    llegadas_ordenadas = []
     vistos = set()
 
     if html:
@@ -82,12 +85,12 @@ def generar_reporte(html):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
             if len(celdas) >= 6:
-                vuelo_raw = celdas[1]
-                origen_raw = celdas[2]
-                fecha = celdas[3]
-                hora = celdas[4]
-                cinta_raw = celdas[5]
-                estado_raw = celdas[6].upper() if len(celdas) > 6 else "PROGRAMADO"
+                vuelo_raw = celdas
+                origen_raw = celdas
+                fecha = celdas
+                hora = celdas
+                cinta_raw = celdas
+                estado_raw = celdas.upper() if len(celdas) > 5 else "PROGRAMADO"
 
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
@@ -107,16 +110,20 @@ def generar_reporte(html):
                 is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= int(digitos) <= 399)
                 
                 aerolinea_raw_text = "LATAM"
+                # Usamos el motor de favicons seguro de Google que GitHub no bloquea
                 if is_sky:
-                    aerolinea = '<img src="https://skyairline.com" width="16" height="16"> **Sky**'
+                    logo_static_url = "https://google.com"
+                    aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **Sky**'
                     vuelo_num = f"H2 {digitos}"
                     aerolinea_raw_text = "Sky"
                 elif is_jetsmart:
-                    aerolinea = '<img src="https://jetsmart.com" width="16" height="16"> **JetSmart**'
+                    logo_static_url = "https://google.com"
+                    aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **JetSmart**'
                     vuelo_num = f"JA {digitos}"
                     aerolinea_raw_text = "JetSmart"
                 else:
-                    aerolinea = '<img src="https://latamairlines.com" width="16" height="16"> **LATAM**'
+                    logo_static_url = "https://google.com"
+                    aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **LATAM**'
                     vuelo_num = f"LA {digitos}"
                     aerolinea_raw_text = "LATAM"
 
