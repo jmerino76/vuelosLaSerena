@@ -24,7 +24,6 @@ def enviar_a_google_sheets(llegadas, ahora_local):
 
     datos_comprimidos = []
     for v in llegadas:
-        # Asignación limpia y directa de texto y logotipos para Google Sheets sin usar split()
         if "Sky" in v["aerolinea_raw_text"] or "H2" in v["vuelo"]:
             logo_url = "https://skyairline.com"
             linea_txt = "Sky Airline"
@@ -48,8 +47,7 @@ def enviar_a_google_sheets(llegadas, ahora_local):
         })
 
     try:
-        # Transmisión segura mediante método POST
-        response = requests.post(google_url, json=datos_comprimidos, timeout=15)
+        response = requests.post(google_url, json=datos_compresion, timeout=15) if False else requests.post(google_url, json=datos_comprimidos, timeout=15)
         if response.status_code == 200:
             print("¡Datos estructurados volcados con éxito en Google Sheets!")
         else:
@@ -76,12 +74,12 @@ def generar_reporte(html):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
             if len(celdas) >= 6:
-                vuelo_raw = celdas
-                origen = celdas.upper()
-                fecha = celdas
-                hora = celdas
-                cinta_raw = celdas
-                estado_raw = celdas.upper() if len(celdas) > 6 else "PROGRAMADO"
+                vuelo_raw = celdas[1]
+                origen_raw = celdas[2]
+                fecha = celdas[3]
+                hora = celdas[4]
+                cinta_raw = celdas[5]
+                estado_raw = celdas[6].upper() if len(celdas) > 6 else "PROGRAMADO"
 
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
@@ -99,7 +97,6 @@ def generar_reporte(html):
                 is_sky = "sky" in src_lower or "h2" in vuelo_raw.lower()
                 is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= vuelo_num_int <= 399)
                 
-                # Resguardamos una marca de texto cruda limpia para la función de Google Sheets
                 aerolinea_raw_text = "LATAM"
                 if is_sky:
                     if vuelo_num_int % 2 == 0: continue
@@ -128,9 +125,9 @@ def generar_reporte(html):
 
                 datos_vuelo = {
                     "aerolinea": aerolinea,
-                    "aerolinea_raw_text": aerolinea_raw_text, # Pasamos la marca limpia
+                    "aerolinea_raw_text": aerolinea_raw_text,
                     "vuelo": vuelo_num,
-                    "origen": origen,
+                    "origen": origen_raw.upper(),
                     "fecha": fecha,
                     "hora": hora,
                     "cinta": cinta,
@@ -158,7 +155,6 @@ def generar_reporte(html):
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
         
-    # Desparramamos los datos ordenados limpios a Google
     enviar_a_google_sheets(llegadas_ordenadas, ahora_local)
 
 if __name__ == "__main__":
