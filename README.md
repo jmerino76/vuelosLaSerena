@@ -1,6 +1,6 @@
 # ✈️ Estado de Vuelos en Tiempo Real - La Serena (SCSE / LSC)
 
-Última actualización: `2026-07-28 16:21:34 (Hora Local Chile)`
+Última actualización: `2026-07-28 16:22:22 (Hora Local Chile)`
 
 ## 🛬 Próximas Llegadas (Arribos)
 
