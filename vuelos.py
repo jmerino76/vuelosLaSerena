@@ -42,23 +42,22 @@ def generar_reporte(html):
                 cinta_o_puerta = celdas
                 estado_raw = celdas.upper() if len(celdas) > 6 else "PROGRAMADO"
 
-                # Filtrar textos basura o menús comerciales del aeropuerto
+                # Filtrar textos basura del menú o componentes comerciales del aeropuerto
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
                     continue
 
-                # 🕵️‍♂️ FILTRO GEOGRÁFICO ESTRICTO:
-                # Si el origen es "LA SERENA", significa que el vuelo está saliendo.
-                # Solo aceptamos ciudades que apunten a un arribo hacia LSC.
+                # 🕵️‍♂️ FILTRO GEOGRÁFICO DEFINITIVO CONTRA SALIDAS:
+                # Si el origen dice "LA SERENA", se trata de un despegue y se descarta automáticamente.
                 origen = origen_raw.upper()
                 if "LA SERENA" in origen or "SERENA" in origen:
                     continue
                 
-                # Forzar origen correcto si la celda venía vacía o con texto erróneo
+                # Validamos que el origen apunte estrictamente a un arribo hacia LSC
                 if not any(x in origen for x in ["SANTIAGO", "ANTOFAGASTA", "IQUIQUE", "CALAMA"]):
                     continue
 
-                # 🖼️ Identificación real de Aerolínea basada en las imágenes de la fila
+                # 🖼️ Identificación real de Aerolínea basada en las imágenes o prefijos
                 img_tag = fila.find("img")
                 src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
                 
