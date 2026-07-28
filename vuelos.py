@@ -47,7 +47,7 @@ def enviar_a_google_sheets(llegadas, ahora_local):
         })
 
     try:
-        response = requests.post(google_url, json=datos_compresion, timeout=15) if False else requests.post(google_url, json=datos_comprimidos, timeout=15)
+        response = requests.post(google_url, json=datos_comprimidos, timeout=15)
         if response.status_code == 200:
             print("¡Datos estructurados volcados con éxito en Google Sheets!")
         else:
@@ -85,31 +85,35 @@ def generar_reporte(html):
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
                     continue
 
-                vuelo_num_int = int(digitos)
-
-                # Filtro definitivo contra despegues (salidas)
+                # 🕵️‍♂️ FILTRO ULTRAESTRICTO 1 CONTRA SALIDAS:
+                # Si la columna de la cinta contiene formato de hora (tiene dos puntos ":"), es un despegue. 
+                # Los arribos reales usan números limpios (1, 2) o dicen "Por confirmar".
                 if ":" in cinta_raw:
                     continue
 
+                # 🕵️‍♂️ FILTRO ULTRAESTRICTO 2 CONTRA SALIDAS:
+                # Si por error el sitio web dice que el origen es LA SERENA, sabemos que está despegando.
+                origen = origen_raw.upper()
+                if "SERENA" in origen:
+                    continue
+
+                # 🖼️ Identificación real de Aerolínea basada en las imágenes oficiales de la fila
                 img_tag = fila.find("img")
                 src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
                 
                 is_sky = "sky" in src_lower or "h2" in vuelo_raw.lower()
-                is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= vuelo_num_int <= 399)
+                is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= int(digitos) <= 399)
                 
                 aerolinea_raw_text = "LATAM"
                 if is_sky:
-                    if vuelo_num_int % 2 == 0: continue
                     aerolinea = '<img src="https://skyairline.com" width="16" height="16"> **Sky**'
                     vuelo_num = f"H2 {digitos}"
                     aerolinea_raw_text = "Sky"
                 elif is_jetsmart:
-                    if vuelo_num_int % 2 != 0: continue
                     aerolinea = '<img src="https://jetsmart.com" width="16" height="16"> **JetSmart**'
                     vuelo_num = f"JA {digitos}"
                     aerolinea_raw_text = "JetSmart"
                 else:
-                    if vuelo_num_int % 2 != 0: continue
                     aerolinea = '<img src="https://latamairlines.com" width="16" height="16"> **LATAM**'
                     vuelo_num = f"LA {digitos}"
                     aerolinea_raw_text = "LATAM"
@@ -127,7 +131,7 @@ def generar_reporte(html):
                     "aerolinea": aerolinea,
                     "aerolinea_raw_text": aerolinea_raw_text,
                     "vuelo": vuelo_num,
-                    "origen": origen_raw.upper(),
+                    "origen": origen,
                     "fecha": fecha,
                     "hora": hora,
                     "cinta": cinta,
@@ -144,6 +148,7 @@ def generar_reporte(html):
     if not llegadas:
         contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
     else:
+        # Ordenamiento cronológico doble estricto (Año-Mes-Día + Hora de menor a mayor)
         llegadas_ordenadas = sorted(
             llegadas,
             key=lambda x: ("-".join(x["sort_fecha"].split("-")[::-1]), x["sort_hora"])
