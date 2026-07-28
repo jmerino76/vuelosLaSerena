@@ -1,10 +1,10 @@
-# ✈️ Estado de Vuelos - Arribos a La Serena (SCSE)
+# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE)
 
-Última actualización: `2026-07-28 18:42:50 UTC`
+Última actualización del reporte: `2026-07-28 14:45:51 (Hora Local Chile)`
 
-| Vuelo | Origen | Salida Estimada | Llegada Estimada | Estado |
+| Vuelo | Origen | Salida Estimada | Llegada Estimada/Real | Estado |
 | :--- | :--- | :--- | :--- | :--- |
-| - | No hay vuelos programados en este momento | - | - | - |
+| - | No se registraron vuelos para el día de hoy | - | - | - |
 
 
-*Datos automatizados a través de AeroAPI de [FlightAware](https://flightaware.com).*
+*Datos diarios automatizados a través de AeroAPI de [FlightAware](https://flightaware.com).*
