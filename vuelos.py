@@ -1,92 +1,77 @@
 import os
 import datetime
 import requests
+from bs4 import BeautifulSoup
 
-# Forzamos HTTP plano debido a restricciones del plan gratuito de Aviationstack
-AVIATIONSTACK_URL = "http://aviationstack.com"
-API_KEY = os.environ.get("FLIGHTAWARE_API_KEY")
-
-def obtener_vuelos_del_dia():
-    if not API_KEY:
-        print("Error: No se encontró la credencial de la API en GitHub Secrets.")
-        return None
-
-    # Consultamos los vuelos de la principal aerolínea de la región (LATAM - LNE/LAN)
-    # Esto despierta el búfer de datos de la API y garantiza que nos entregue información real
-    params = {
-        "access_key": API_KEY,
-        "airline_icao": "LNE",  # LATAM Express / Chile
-        "limit": 100
+def obtener_vuelos_scraping():
+    # Consultamos la vista de arribos públicos de Flightera para el aeropuerto SCSE
+    url = "https://flightera.net"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     
     try:
-        response = requests.get(AVIATIONSTACK_URL, params=params)
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
-        return response.json()
+        return response.text
     except requests.exceptions.RequestException as e:
-        print(f"Error al conectar con Aviationstack: {e}")
+        print(f"Error al conectar con la fuente de vuelos: {e}")
         return None
 
-def generar_reporte(datos):
+def generar_reporte(html):
     zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
     ahora_local = datetime.datetime.now(zona_chile).strftime("%Y-%m-%d %H:%M:%S")
     
     contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)\n\n"
     contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
-    contenido += "| Vuelo | Aerolínea | Origen | Salida Estimada | Llegada Estimada/Real | Estado |\n"
-    contenido += "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
+    contenido += "| Horario | Vuelo | Origen | Aerolínea / Avión | Estado |\n"
+    contenido += "| :--- | :--- | :--- | :--- | :--- |\n"
 
-    todos_los_vuelos = datos.get("data", []) if datos else []
-    
-    # Filtramos localmente mediante Python solo los arribos dirigidos al Aeropuerto La Florida (LSC)
-    vuelos_la_serena = [
-        f for f in todos_los_vuelos 
-        if f.get("arrival", {}).get("iata") == "LSC"
-    ]
-
-    if not vuelos_la_serena:
-        contenido += "| - | - | No hay vuelos de LATAM detectados para La Serena en este bloque horario | - | - | - |\n"
+    if not html:
+        contenido += "| - | - | No se pudo descargar la información de vuelos | - | - |\n"
     else:
-        # Ordenamos los arribos cronológicamente por horario de llegada programado
-        vuelos_ordenados = sorted(
-            vuelos_la_serena,
-            key=lambda x: x.get("arrival", {}).get("scheduled") or ""
-        )
-
-        for f in vuelos_ordenados:
-            vuelo_num = f.get("flight", {}).get("iata") or f.get("flight", {}).get("number") or "N/A"
-            aerolinea = f.get("airline", {}).get("name") or "LATAM"
-            origen = f.get("departure", {}).get("iata") or "SCL"
+        soup = BeautifulSoup(html, "html.parser")
+        # Localizamos la tabla principal de vuelos dentro del HTML público
+        tabla = soup.find("table")
+        
+        if not tabla:
+            contenido += "| - | - | No se encontraron registros de vuelos en este bloque horario | - | - |\n"
+        else:
+            filas = tabla.find_all("tr")[1:] # Omitimos el encabezado de la tabla original
+            vuelos_encontrados = 0
             
-            # Capturar horas estimadas o reales
-            salida_raw = f.get("departure", {}).get("scheduled") or "N/A"
-            llegada_raw = f.get("arrival", {}).get("actual") or f.get("arrival", {}).get("scheduled") or "N/A"
+            for fila in filas:
+                celdas = fila.find_all("td")
+                if len(celdas) >= 5:
+                    # Extracción limpia de columnas basada en la estructura del radar
+                    horario = celdas[0].get_text(strip=True)[:16]
+                    vuelo = celdas[1].get_text(strip=True)
+                    origen = celdas[2].get_text(strip=True)
+                    aerolinea = celdas[3].get_text(strip=True)
+                    estado_raw = celdas[4].get_text(strip=True)
+                    
+                    # Formatear iconos amigables para el usuario
+                    if "Aterrizó" in estado_raw or "Landed" in estado_raw or "early" in estado_raw or "late" in estado_raw:
+                        estado = "🟢 Aterrizó / A tiempo"
+                    elif "En Ruta" in estado_raw or "En curso" in estado_raw:
+                        estado = "🔵 En Ruta"
+                    elif "Cancelado" in estado_raw or "Delayed" in estado_raw:
+                        estado = "🔴 Demorado / Cancelado"
+                    else:
+                        estado = f"⚪ {estado_raw}"
+                        
+                    contenido += f"| {horario} | **{vuelo}** | {origen} | {aerolinea} | {estado} |\n"
+                    vuelos_encontrados += 1
             
-            # Formatear el texto de fecha de manera limpia (primeros 16 caracteres: AAAA-MM-DD HH:MM)
-            salida = salida_raw.replace("T", " ")[:16] if salida_raw != "N/A" else "N/A"
-            llegada = llegada_raw.replace("T", " ")[:16] if llegada_raw != "N/A" else "N/A"
-            
-            # Mapear estados para el usuario
-            status_raw = f.get("flight_status", "unknown")
-            if status_raw == "landed":
-                estado = "🟢 Aterrizó"
-            elif status_raw == "active":
-                estado = "🔵 En Ruta"
-            elif status_raw == "scheduled":
-                estado = "⚪ Programado"
-            elif status_raw == "cancelled":
-                estado = "🔴 Cancelado"
-            else:
-                estado = f"🔸 {status_raw.capitalize()}"
-            
-            contenido += f"| **{vuelo_num}** | {aerolinea} | {origen} | {salida} | {llegada} | {estado} |\n"
-            
-    contenido += f"\n\n*Datos filtrados localmente y automatizados a través de la API de [Aviationstack](https://aviationstack.com/).*"
+            if vuelos_encontrados == 0:
+                contenido += "| - | - | No hay vuelos programados para las próximas horas | - | - |\n"
+                
+    contenido += f"\n\n*Datos en tiempo real extraídos automáticamente de radares de navegación aérea abiertos.*"
 
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte local de arribos procesado exitosamente.")
+    print("Reporte Markdown generado con éxito vía Web Scraping.")
 
 if __name__ == "__main__":
-    datos_vuelos = obtener_vuelos_del_dia()
-    generar_reporte(datos_vuelos)
+    html_data = obtener_vuelos_scraping()
+    generar_reporte(html_data)
