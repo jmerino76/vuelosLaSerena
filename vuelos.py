@@ -2,105 +2,90 @@ import os
 import datetime
 import requests
 
-# Endpoint unificado de operaciones del aeropuerto (Garantiza datos mixtos)
-AEROAPI_URL = "https://flightaware.com"
-API_KEY = os.environ.get("FLIGHTAWARE_API_KEY")
+# Cambiamos al endpoint oficial de arribos en tiempo real de Aviationstack
+AVIATIONSTACK_URL = "https://aviationstack.com"
+API_KEY = os.environ.get("FLIGHTAWARE_API_KEY") # Mantenemos el nombre de la variable de GitHub para no cambiar el archivo YML
 
 def obtener_vuelos_del_dia():
     if not API_KEY:
-        print("Error: No se encontró la variable de entorno FLIGHTAWARE_API_KEY.")
+        print("Error: No se encontró la credencial de la API en GitHub Secrets.")
         return None
 
-    # 1. Definir la zona horaria de Chile (UTC-4)
-    zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
-    ahora_chile = datetime.datetime.now(zona_chile)
-    
-    # 2. Creamos una ventana de 24 horas centrada en el momento actual
-    # 12 horas en el pasado para capturar la mañana y 12 en el futuro para capturar la tarde
-    inicio_chile = ahora_chile - datetime.timedelta(hours=12)
-    fin_chile = ahora_chile + datetime.timedelta(hours=12)
-    
-    # 3. Convertir a formato UTC absoluto para FlightAware
-    inicio_utc = inicio_chile.astimezone(datetime.timezone.utc)
-    fin_utc = fin_chile.astimezone(datetime.timezone.utc)
-
-    headers = {"x-apikey": API_KEY}
-    
-    # Parámetros oficiales validados para el endpoint de aeropuertos v4
+    # Parámetros oficiales de Aviationstack estructurados para La Serena (LSC)
     params = {
-        "start": inicio_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "end": fin_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "max_pages": 2
+        "access_key": API_KEY,
+        "arr_iata": "LSC",      # Código IATA de La Serena
+        "limit": 100            # Límite amplio para capturar todos los vuelos de la jornada
     }
     
     try:
-        response = requests.get(AEROAPI_URL, headers=headers, params=params)
+        response = requests.get(AVIATIONSTACK_URL, params=params)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"Error al conectar con FlightAware: {e}")
+        print(f"Error al conectar con Aviationstack: {e}")
         return None
 
 def generar_reporte(datos):
     zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
     ahora_local = datetime.datetime.now(zona_chile).strftime("%Y-%m-%d %H:%M:%S")
     
-    contenido = f"# ✈️ Cronograma de Arribos de la Jornada - La Serena (SCSE)\n\n"
+    contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)\n\n"
     contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
-    contenido += "| Vuelo | Origen | Salida Estimada | Llegada Estimada/Real | Estado |\n"
-    contenido += "| :--- | :--- | :--- | :--- | :--- |\n"
+    contenido += "| Vuelo | Aerolínea | Origen | Salida Estimada | Llegada Estimada/Real | Estado |\n"
+    contenido += "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
 
-    lista_vuelos = []
-    if datos:
-        # Extraemos tanto los arribos completados (arrivals) como los programados (scheduled_arrivals)
-        if "arrivals" in datos and datos["arrivals"]:
-            lista_vuelos.extend(datos["arrivals"])
-        if "scheduled_arrivals" in datos and datos["scheduled_arrivals"]:
-            lista_vuelos.extend(datos["scheduled_arrivals"])
+    lista_vuelos = datos.get("data", []) if datos else []
 
     if not lista_vuelos:
-        contenido += "| - | No se encontraron registros de vuelos en la ventana de tiempo de hoy | - | - | - |\n"
+        contenido += "| - | - | No se encontraron vuelos programados para hoy | - | - | - |\n"
     else:
-        # Ordenamos los vuelos cronológicamente basándonos en la hora de llegada estimada
-        vuelos_ordenados = sorted(
-            lista_vuelos, 
-            key=lambda x: x.get("estimated_on") or x.get("scheduled_on") or ""
-        )
+        # Filtrar para asegurarnos de que la API solo nos devuelva los vuelos del día de hoy
+        fecha_hoy_chile = datetime.datetime.now(zona_chile).strftime("%Y-%m-%d")
+        vuelos_hoy = [v for v in lista_vuelos if v.get("flight_date") == fecha_hoy_chile]
 
-        vistos = set()
-        for vuelo in vuelos_ordenados:
-            ident = vuelo.get("ident", "N/A")
-            
-            # Evitar que vuelos repetidos aparezcan dos veces en el markdown
-            if ident in vistos and ident != "N/A":
-                continue
-            vistos.add(ident)
-            
-            origen = vuelo.get("origin", {}).get("code", "N/A")
-            salida_t = vuelo.get("estimated_off") or vuelo.get("scheduled_off") or "N/A"
-            llegada_t = vuelo.get("actual_on") or vuelo.get("estimated_on") or vuelo.get("scheduled_on") or "N/A"
-            
-            # Limpieza visual de strings de fecha
-            salida = salida_t.replace("T", " ").replace("Z", "")[:16]
-            llegada = llegada_t.replace("T", " ").replace("Z", "")[:16]
-            
-            estado = vuelo.get("status", "Desconocido")
-            
-            # Normalización gráfica de estados aeronáuticos
-            if "Arrived" in estado:
-                estado = "🟢 Aterrizó"
-            elif "En Route" in estado:
-                estado = "🔵 En Ruta"
-            elif "Scheduled" in estado:
-                estado = "⚪ Programado"
+        if not vuelos_hoy:
+            contenido += "| - | - | No hay operaciones comerciales registradas para la fecha de hoy | - | - | - |\n"
+        else:
+            # Ordenar los vuelos por la hora programada de aterrizaje
+            vuelos_ordenados = sorted(
+                vuelos_hoy,
+                key=lambda x: x.get("arrival", {}).get("scheduled") or ""
+            )
+
+            for f in vuelos_ordenados:
+                vuelo_num = f.get("flight", {}).get("iata") or f.get("flight", {}).get("number") or "N/A"
+                aerolinea = f.get("airline", {}).get("name") or "Desconocida"
+                origen = f.get("departure", {}).get("iata") or "N/A"
                 
-            contenido += f"| **{ident}** | {origen} | {salida} | {llegada} | {estado} |\n"
-            
-    contenido += f"\n\n*Datos automatizados de la jornada a través de AeroAPI de [FlightAware](https://es.flightaware.com/).*"
+                # Extraer tiempos de salida y llegada
+                salida_t = f.get("departure", {}).get("scheduled") or "N/A"
+                llegada_t = f.get("arrival", {}).get("actual") or f.get("arrival", {}).get("scheduled") or "N/A"
+                
+                # Limpieza de cadenas de texto ISO (sacar desvíos de zona horaria)
+                salida = salida_t.replace("T", " ").split("+")[0][:16]
+                llegada = llegada_t.replace("T", " ").split("+")[0][:16]
+                
+                # Traducir los estados nativos de Aviationstack
+                status_raw = f.get("flight_status", "unknown")
+                if status_raw == "landed":
+                    estado = "🟢 Aterrizó"
+                elif status_raw == "active":
+                    estado = "🔵 En Ruta"
+                elif status_raw == "scheduled":
+                    estado = "⚪ Programado"
+                elif status_raw == "cancelled":
+                    estado = "🔴 Cancelado"
+                else:
+                    estado = f"🔸 {status_raw.capitalize()}"
+                
+                contenido += f"| **{vuelo_num}** | {aerolinea} | {origen} | {salida} | {llegada} | {estado} |\n"
+                
+    contenido += f"\n\n*Datos diarios automatizados a través de la API de [Aviationstack](https://aviationstack.com).*"
 
-    with open("README.md", "w", encoding="utf-8") as f:
-        f.write(contenido)
-    print("Reporte de ventana diaria de 24h generado con éxito.")
+    with open("README.md", "w", encoding="utf-8") as archivo:
+        archivo.write(contenido)
+    print("Reporte diario generado exitosamente mediante Aviationstack.")
 
 if __name__ == "__main__":
     datos_vuelos = obtener_vuelos_del_dia()
