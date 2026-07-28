@@ -2,7 +2,7 @@ import os
 import datetime
 import requests
 
-# Forzamos HTTP plano porque el plan gratuito de Aviationstack bloquea solicitudes HTTPS nativas
+# Forzamos HTTP porque el plan gratuito de Aviationstack bloquea solicitudes HTTPS nativas
 AVIATIONSTACK_URL = "http://aviationstack.com"
 API_KEY = os.environ.get("FLIGHTAWARE_API_KEY")
 
@@ -11,11 +11,11 @@ def obtener_vuelos_del_dia():
         print("Error: No se encontró la credencial en GitHub Secrets.")
         return None
 
-    # Parámetros directos para jalar los movimientos hacia La Serena (LSC)
+    # Parámetros directos para jalar los arribos hacia La Serena (LSC)
     params = {
         "access_key": API_KEY,
         "arr_iata": "LSC",
-        "limit": 50
+        "limit": 100
     }
     
     try:
@@ -40,25 +40,20 @@ def generar_reporte(datos):
     if not lista_vuelos:
         contenido += "| - | - | No se encontraron vuelos disponibles en los servidores | - | - | - |\n"
     else:
-        # Ordenar cronológicamente por hora de arribo programado
-        vuelos_ordenados = sorted(
-            lista_vuelos,
-            key=lambda x: x.get("arrival", {}).get("scheduled") or ""
-        )
-
-        for f in vuelos_ordenados:
+        for f in lista_vuelos:
             vuelo_num = f.get("flight", {}).get("iata") or f.get("flight", {}).get("number") or "N/A"
             aerolinea = f.get("airline", {}).get("name") or "Desconocida"
             origen = f.get("departure", {}).get("iata") or "N/A"
             
-            # Capturar horas de vuelo
-            salida_t = f.get("departure", {}).get("scheduled") or "N/A"
-            llegada_t = f.get("arrival", {}).get("actual") or f.get("arrival", {}).get("scheduled") or "N/A"
+            # Capturar horas de vuelo crudas de forma segura
+            salida_raw = f.get("departure", {}).get("scheduled") or "N/A"
+            llegada_raw = f.get("arrival", {}).get("actual") or f.get("arrival", {}).get("scheduled") or "N/A"
             
-            # Limpiar el formato ISO separando la fecha y la hora
-            salida = salida_t.replace("T", " ").split("+")[0][:16]
-            llegada = llegada_t.replace("T", " ").split("+")[0][:16]
+            # Limpieza visual segura (corta las primeras 16 letras: "AAAA-MM-DD HH:MM")
+            salida = salida_raw.replace("T", " ")[:16] if salida_raw != "N/A" else "N/A"
+            llegada = llegada_raw.replace("T", " ")[:16] if llegada_raw != "N/A" else "N/A"
             
+            # Traducir los estados nativos de Aviationstack
             status_raw = f.get("flight_status", "unknown")
             if status_raw == "landed":
                 estado = "🟢 Aterrizó"
