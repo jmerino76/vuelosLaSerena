@@ -16,6 +16,47 @@ def obtener_vuelos_oficiales():
         print(f"Error al conectar con el Aeropuerto de La Serena: {e}")
         return None
 
+def enviar_a_google_sheets(llegadas, ahora_local):
+    google_url = os.environ.get("GOOGLE_SHEETS_URL")
+    if not google_url:
+        print("Aviso: No se encontró GOOGLE_SHEETS_URL. Saltando vuelco a Google.")
+        return
+
+    datos_comprimidos = []
+    for v in llegadas:
+        # Asignación limpia y directa de texto y logotipos para Google Sheets sin usar split()
+        if "Sky" in v["aerolinea_raw_text"] or "H2" in v["vuelo"]:
+            logo_url = "https://skyairline.com"
+            linea_txt = "Sky Airline"
+        elif "JetSmart" in v["aerolinea_raw_text"] or "JA" in v["vuelo"]:
+            logo_url = "https://jetsmart.com"
+            linea_txt = "JetSmart"
+        else:
+            logo_url = "https://latamairlines.com"
+            linea_txt = "LATAM Airlines"
+
+        datos_comprimidos.append({
+            "logo_formula": f'=IMAGE("{logo_url}")',
+            "aerolinea_texto": linea_txt,
+            "vuelo": v["vuelo"],
+            "origen": v["origen"],
+            "fecha": v["fecha"],
+            "hora": v["hora"],
+            "cinta": v["cinta"].replace("🧳 ", ""),
+            "estado": v["estado"],
+            "actualizado": ahora_local
+        })
+
+    try:
+        # Transmisión segura mediante método POST
+        response = requests.post(google_url, json=datos_comprimidos, timeout=15)
+        if response.status_code == 200:
+            print("¡Datos estructurados volcados con éxito en Google Sheets!")
+        else:
+            print(f"Google Apps Script respondió con código {response.status_code}: {response.text}")
+    except Exception as e:
+        print(f"Error al enviar datos a Google Sheets: {e}")
+
 def generar_reporte(html):
     zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
     ahora_local = datetime.datetime.now(zona_chile).strftime("%Y-%m-%d %H:%M:%S")
@@ -35,44 +76,49 @@ def generar_reporte(html):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
             if len(celdas) >= 6:
-                vuelo_raw = celdas[1]
-                origen = celdas[2].upper()
-                fecha = celdas[3]
-                hora = celdas[4]
-                cinta_raw = celdas[5]
-                estado_raw = celdas[6].upper() if len(celdas) > 6 else "PROGRAMADO"
+                vuelo_raw = celdas
+                origen = celdas.upper()
+                fecha = celdas
+                hora = celdas
+                cinta_raw = celdas
+                estado_raw = celdas.upper() if len(celdas) > 6 else "PROGRAMADO"
 
-                # Filtrar textos basura o menús comerciales
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
                     continue
 
                 vuelo_num_int = int(digitos)
 
-                # 🕵️‍♂️ FILTRO DEFINITIVO ULTRAESTRICTO CONTRA SALIDAS:
-                # Si la columna de la cinta contiene un formato de hora (ej: 17:11, 17:34, 21:59)
-                # significa que es el horario de despegue de una salida. Los arribos usan números sueltos (1, 2) o vacíos.
+                # Filtro definitivo contra despegues (salidas)
                 if ":" in cinta_raw:
                     continue
 
-                # 🖼️ Identificación real de Aerolínea basada en las imágenes oficiales de la fila
                 img_tag = fila.find("img")
                 src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
                 
-                if "sky" in src_lower or "h2" in vuelo_raw.lower():
+                is_sky = "sky" in src_lower or "h2" in vuelo_raw.lower()
+                is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= vuelo_num_int <= 399)
+                
+                # Resguardamos una marca de texto cruda limpia para la función de Google Sheets
+                aerolinea_raw_text = "LATAM"
+                if is_sky:
+                    if vuelo_num_int % 2 == 0: continue
                     aerolinea = '<img src="https://skyairline.com" width="16" height="16"> **Sky**'
                     vuelo_num = f"H2 {digitos}"
-                elif "smart" in src_lower or "ja" in vuelo_raw.lower() or (300 <= vuelo_num_int <= 399):
+                    aerolinea_raw_text = "Sky"
+                elif is_jetsmart:
+                    if vuelo_num_int % 2 != 0: continue
                     aerolinea = '<img src="https://jetsmart.com" width="16" height="16"> **JetSmart**'
                     vuelo_num = f"JA {digitos}"
+                    aerolinea_raw_text = "JetSmart"
                 else:
+                    if vuelo_num_int % 2 != 0: continue
                     aerolinea = '<img src="https://latamairlines.com" width="16" height="16"> **LATAM**'
                     vuelo_num = f"LA {digitos}"
+                    aerolinea_raw_text = "LATAM"
 
-                # Formatear el texto de la cinta de equipaje de forma limpia
                 cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
 
-                # Formateo gráfico de los estados reales de llegada
                 if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "🟢", "FIN"]):
                     estado = "🟢 Aterrizó"
                 elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
@@ -82,6 +128,7 @@ def generar_reporte(html):
 
                 datos_vuelo = {
                     "aerolinea": aerolinea,
+                    "aerolinea_raw_text": aerolinea_raw_text, # Pasamos la marca limpia
                     "vuelo": vuelo_num,
                     "origen": origen,
                     "fecha": fecha,
@@ -92,33 +139,27 @@ def generar_reporte(html):
                     "sort_hora": hora
                 }
 
-                # Evitar registros duplicados exactos en el Markdown
                 clave_vuelo = f"{vuelo_num}-{fecha}-{hora}"
-                if clave_vuelo in vistos:
-                    continue
+                if clave_vuelo in vistos: continue
                 vistos.add(clave_vuelo)
                 llegadas.append(datos_vuelo)
 
     if not llegadas:
         contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
     else:
-        # Ordenamiento cronológico doble estricto (Año-Mes-Día + Hora de menor a mayor)
         llegadas_ordenadas = sorted(
             llegadas,
-            key=lambda x: (
-                "-".join(x["sort_fecha"].split("-")[::-1]),
-                x["sort_hora"]
-            )
+            key=lambda x: ("-".join(x["sort_fecha"].split("-")[::-1]), x["sort_hora"])
         )
 
         for v in llegadas_ordenadas:
             contenido += f"| {v['aerolinea']} | **{v['vuelo']}** | {v['origen']} | {v['fecha']} | {v['hora']} | {v['cinta']} | {v['estado']} |\n"
 
-    contenido += f"\n\n*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*"
-
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte de arribos purificado de salidas generado con éxito por filtro de cinta.")
+        
+    # Desparramamos los datos ordenados limpios a Google
+    enviar_a_google_sheets(llegadas_ordenadas, ahora_local)
 
 if __name__ == "__main__":
     html_data = obtener_vuelos_oficiales()
