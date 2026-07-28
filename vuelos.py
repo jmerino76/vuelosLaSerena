@@ -2,7 +2,7 @@ import os
 import datetime
 import requests
 
-# Configuración de la API y Destino (La Serena - SCSE)
+# Cambiamos al endpoint general de vuelos del aeropuerto para permitir rangos de tiempo
 AEROAPI_URL = "https://flightaware.com"
 API_KEY = os.environ.get("FLIGHTAWARE_API_KEY")
 
@@ -11,14 +11,14 @@ def obtener_vuelos_del_dia():
         print("Error: No se encontró la variable de entorno FLIGHTAWARE_API_KEY.")
         return None
 
-    # Calcular el rango de tiempo para el día de hoy (en UTC)
+    # Calculamos el rango completo del día de hoy en UTC
     ahora_utc = datetime.datetime.now(datetime.timezone.utc)
     inicio_dia = ahora_utc.replace(hour=0, minute=0, second=0, microsecond=0)
     fin_dia = ahora_utc.replace(hour=23, minute=59, second=59, microsecond=0)
 
     headers = {"x-apikey": API_KEY}
     
-    # Pasamos los filtros de inicio y fin del día actual a la API
+    # Este endpoint sí procesa correctamente 'start' y 'end' para todo el día
     params = {
         "start": inicio_dia.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "end": fin_dia.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -34,7 +34,7 @@ def obtener_vuelos_del_dia():
         return None
 
 def generar_reporte(datos):
-    # Ajuste visual a la hora local de Chile (UTC-4) para el encabezado del reporte
+    # Ajuste visual a la hora de Chile (UTC-4)
     ahora_local = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S")
     
     contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE)\n\n"
@@ -42,30 +42,43 @@ def generar_reporte(datos):
     contenido += "| Vuelo | Origen | Salida Estimada | Llegada Estimada/Real | Estado |\n"
     contenido += "| :--- | :--- | :--- | :--- | :--- |\n"
 
-    if not datos or "arrivals" not in datos or not datos["arrivals"]:
+    # El endpoint unificado separa los vuelos en "arrivals" (ya aterrizados) y "scheduled_arrivals" (por llegar)
+    lista_vuelos = []
+    if datos:
+        if "arrivals" in datos and datos["arrivals"]:
+            lista_vuelos.extend(datos["arrivals"])
+        if "scheduled_arrivals" in datos and datos["scheduled_arrivals"]:
+            lista_vuelos.extend(datos["scheduled_arrivals"])
+
+    if not lista_vuelos:
         contenido += "| - | No se registraron vuelos para el día de hoy | - | - | - |\n"
     else:
-        # Ordenamos los vuelos por su hora de llegada programada o estimada
+        # Ordenamos cronológicamente todos los arribos detectados
         vuelos_ordenados = sorted(
-            datos["arrivals"], 
+            lista_vuelos, 
             key=lambda x: x.get("estimated_on") or x.get("scheduled_on") or ""
         )
 
+        # Usamos un set para evitar filas duplicadas si un vuelo aparece en ambas listas de la API
+        vistos = set()
+
         for vuelo in vuelos_ordenados:
             ident = vuelo.get("ident", "N/A")
-            origen = vuelo.get("origin", {}).get("code", "N/A")
             
+            # Si el vuelo ya se procesó, lo saltamos
+            if ident in vistos and ident != "N/A":
+                continue
+            vistos.add(ident)
+            
+            origen = vuelo.get("origin", {}).get("code", "N/A")
             salida_t = vuelo.get("estimated_off") or vuelo.get("scheduled_off") or "N/A"
-            # Si el vuelo ya llegó, priorizamos mostrar la hora real de toque en pista (actual_on)
             llegada_t = vuelo.get("actual_on") or vuelo.get("estimated_on") or vuelo.get("scheduled_on") or "N/A"
             
-            # Limpieza de strings para el reporte
             salida = salida_t.replace("T", " ").replace("Z", "")[:16]
             llegada = llegada_t.replace("T", " ").replace("Z", "")[:16]
             
             estado = vuelo.get("status", "Desconocido")
             
-            # Traducir estados comunes para mejor lectura
             if "Arrived" in estado:
                 estado = "🟢 Aterrizó"
             elif "En Route" in estado:
@@ -75,11 +88,11 @@ def generar_reporte(datos):
                 
             contenido += f"| **{ident}** | {origen} | {salida} | {llegada} | {estado} |\n"
             
-    contenido += f"\n\n*Datos diarios automatizados a través de AeroAPI de [FlightAware](https://flightaware.com).*"
+    contenido += f"\n\n*Datos diarios automatizados a través de AeroAPI de [FlightAware](https://es.flightaware.com/).*"
 
     with open("README.md", "w", encoding="utf-8") as f:
         f.write(contenido)
-    print("Reporte diario actualizado en README.md.")
+    print("Reporte diario unificado generado con éxito.")
 
 if __name__ == "__main__":
     datos_vuelos = obtener_vuelos_del_dia()
