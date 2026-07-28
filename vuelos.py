@@ -3,19 +3,19 @@ import datetime
 import requests
 from bs4 import BeautifulSoup
 
-def obtener_vuelos_scraping():
-    # Consultamos la vista de arribos de Flightera para La Serena (SCSE)
-    url = "https://flightera.net"
+def obtener_vuelos_oficiales():
+    # Conectamos directo con la base pública del terminal de La Serena
+    url = "https://www.aeropuertolaserena.cl/"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     
     try:
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=20)
         response.raise_for_status()
         return response.text
     except requests.exceptions.RequestException as e:
-        print(f"Error al conectar con la fuente de vuelos: {e}")
+        print(f"Error al conectar con el Aeropuerto de La Serena: {e}")
         return None
 
 def generar_reporte(html):
@@ -24,55 +24,63 @@ def generar_reporte(html):
     
     contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)\n\n"
     contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
-    contenido += "| Horario | Vuelo | Origen | Aerolínea / Avión | Estado |\n"
+    contenido += "| Aerolínea | Vuelo | Origen | Fecha / Hora | Estado |\n"
     contenido += "| :--- | :--- | :--- | :--- | :--- |\n"
 
     if not html:
-        contenido += "| - | - | No se pudo descargar la información de vuelos | - | - |\n"
+        contenido += "| - | - | No se pudo descargar la información desde el terminal oficial | - | - |\n"
     else:
         soup = BeautifulSoup(html, "html.parser")
-        # Localizamos la tabla principal de vuelos dentro del HTML público
-        tabla = soup.find("table")
         
-        if not tabla:
-            contenido += "| - | - | No se encontraron registros de vuelos en este bloque horario | - | - |\n"
+        # El sitio oficial organiza los vuelos dentro de elementos de tipo lista o tablas estructuradas
+        # Buscamos las filas correspondientes a "Próximas Llegadas"
+        filas_vuelos = []
+        
+        # Buscamos todas las tablas o filas que tengan datos de aerolíneas
+        for fila in soup.find_all("tr"):
+            texto_fila = fila.get_text()
+            # Filtramos solo las filas que contengan información relevante de llegadas
+            if any(origen in texto_fila.upper() for origen in ["SANTIAGO", "ANTOFAGASTA", "IQUIQUE", "CALAMA"]):
+                filas_vuelos.append(fila)
+
+        if not filas_vuelos:
+            contenido += "| - | - | No hay arribos comerciales registrados para las próximas horas | - | - |\n"
         else:
-            filas = tabla.find_all("tr")[1:] # Omitimos el encabezado de la tabla original
-            vuelos_encontrados = 0
-            
-            for fila in filas:
-                celdas = fila.find_all("td")
-                # Verificamos que la fila tenga las columnas necesarias de datos
-                if len(celdas) >= 5:
-                    # Extracción exacta indexando cada columna del HTML de forma independiente
-                    horario = celdas[0].get_text(strip=True)[:16]
-                    vuelo = celdas[1].get_text(strip=True)
-                    origen = celdas[2].get_text(strip=True)
-                    aerolinea = celdas[3].get_text(strip=True)
-                    estado_raw = celdas[4].get_text(strip=True)
-                    
-                    # Formatear iconos amigables basados en el estado del vuelo
-                    if any(x in estado_raw for x in ["Aterrizó", "Landed", "early", "late"]):
-                        estado = "🟢 Aterrizó / A tiempo"
-                    elif any(x in estado_raw for x in ["En Ruta", "En curso", "En vuelo"]):
-                        estado = "🔵 En Ruta"
-                    elif any(x in estado_raw for x in ["Cancelado", "Delayed", "Demorado"]):
-                        estado = "🔴 Demorado / Cancelado"
-                    else:
-                        estado = f"⚪ {estado_raw}"
-                        
-                    contenido += f"| {horario} | **{vuelo}** | {origen} | {aerolinea} | {estado} |\n"
-                    vuelos_encontrados += 1
-            
-            if vuelos_encontrados == 0:
-                contenido += "| - | - | No hay vuelos programados para las próximas horas | - | - |\n"
+            vistos = set()
+            for fila in filas_vuelos:
+                celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
-    contenido += f"\n\n*Datos en tiempo real extraídos automáticamente de radares de navegación aérea abiertos.*"
+                if len(celdas) >= 5:
+                    aerolinea = celdas[0]
+                    vuelo = celdas[1]
+                    origen = celdas[2]
+                    fecha_hora = f"{celdas[3]} {celdas[4]}"
+                    estado_raw = celdas[5] if len(celdas) > 5 else "PROGRAMADO"
+                    
+                    # Evitamos duplicaciones en la lectura de la página web
+                    clave_vuelo = f"{vuelo}-{celdas[4]}"
+                    if clave_vuelo in vistos:
+                        continue
+                    vistos.add(clave_vuelo)
+
+                    # Iconografía amigable según estado real
+                    if "LANDED" in estado_raw.upper() or "ATERRIZÓ" in estado_raw.upper():
+                        estado = "🟢 Aterrizó"
+                    elif "EN RUTA" in estado_raw.upper() or "EN VUELO" in estado_raw.upper():
+                        estado = "🔵 En Ruta"
+                    elif "RETRASADO" in estado_raw.upper() or "DEMORADO" in estado_raw.upper():
+                        estado = "🔴 Retrasado"
+                    else:
+                        estado = f"⚪ {estado_raw.capitalize()}"
+
+                    contenido += f"| {aerolinea} | **{vuelo}** | {origen} | {fecha_hora} | {estado} |\n"
+
+    contenido += f"\n\n*Datos obtenidos directamente desde el portal oficial del [Aeropuerto La Florida de La Serena](https://www.aeropuertolaserena.cl/).*"
 
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
-    print("Reporte Markdown generado con éxito vía Web Scraping indexado.")
+    print("Reporte Markdown generado con éxito vía conexión oficial.")
 
 if __name__ == "__main__":
-    html_data = obtener_vuelos_scraping()
+    html_data = obtener_vuelos_oficiales()
     generar_reporte(html_data)
