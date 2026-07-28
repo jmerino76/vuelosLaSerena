@@ -1,36 +1,31 @@
-name: Actualizar Vuelos La Serena Realtime
+name: Actualizar Vuelos La Serena
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # El robot de GitHub correrá solo cada 15 minutos de forma perpetua
-  workflow_dispatch: # Permite que lo pruebes manualmente cuando quieras
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
-  run-script:
+  actualizar:
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
 
     steps:
-    - name: Descargar repositorio
-      uses: actions/checkout@v4
+    - name: Clonar repositorio
+      uses: actions/checkout@v4.2.2
 
     - name: Configurar Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5.4.0
       with:
         python-version: '3.10'
 
-    - name: Instalar Dependencias de Extracción
+    - name: Instalar dependencias
       run: |
         python -m pip install --upgrade pip
-        pip install requests beautifulsoup4
+        pip install -r requirements.txt
 
-    - name: Ejecutar Extractor Automatizado FlightAware
-      run: python tu_script.py
-
-    - name: Auto-guardar cambios en GitHub
-      uses: stefanzweifel/git-auto-commit-action@v5
-      with:
-        commit_message: "✈️ Sincronización automática de retrasos desde FlightAware"
-        file_pattern: 'vuelos_la_serena.json'
+    - name: Consultar API y Generar Reporte
+      env:
+        FLIGHTAWARE_API_KEY: ${{ secrets.FLIGHTAWARE_API_KEY }}
+      run: python vuelos.py
