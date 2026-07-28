@@ -22,34 +22,42 @@ def enviar_a_google_sheets(llegadas, ahora_local):
         print("Aviso: No se encontró GOOGLE_SHEETS_URL. Saltando vuelco a Google.")
         return
 
-    datos_comprimidos = []
+    vuelos_payload = []
     for v in llegadas:
         if "Sky" in v["aerolinea_raw_text"] or "H2" in v["vuelo"]:
             logo_url = "https://skyairline.com"
-            linea_txt = "Sky Airline"
+            linea_txt = "Sky"
         elif "JetSmart" in v["aerolinea_raw_text"] or "JA" in v["vuelo"]:
             logo_url = "https://jetsmart.com"
             linea_txt = "JetSmart"
         else:
             logo_url = "https://latamairlines.com"
-            linea_txt = "LATAM Airlines"
+            linea_txt = "LATAM"
 
-        datos_comprimidos.append({
-            "logo_formula": f'=IMAGE("{logo_url}")',
-            "aerolinea_texto": linea_txt,
+        vuelos_payload.append({
+            "logo_url": logo_url,
+            "aerolinea_nombre": linea_txt,
             "vuelo": v["vuelo"],
             "origen": v["origen"],
             "fecha": v["fecha"],
             "hora": v["hora"],
             "cinta": v["cinta"].replace("🧳 ", ""),
-            "estado": v["estado"],
-            "actualizado": ahora_local
+            "estado": v["estado"]
         })
 
+    # Estructuramos el JSON incluyendo el encabezado literal del README
+    paquete_completo = {
+        "metadata": {
+            "titulo": "✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)",
+            "actualizacion": f"Última actualización del reporte: {ahora_local} (Hora Local Chile)"
+        },
+        "vuelos": vuelos_payload
+    }
+
     try:
-        response = requests.post(google_url, json=datos_comprimidos, timeout=15)
+        response = requests.post(google_url, json=paquete_completo, timeout=15)
         if response.status_code == 200:
-            print("¡Datos estructurados volcados con éxito en Google Sheets!")
+            print("¡Formato espejo del README volcado con éxito en Google Sheets!")
         else:
             print(f"Google Apps Script respondió con código {response.status_code}: {response.text}")
     except Exception as e:
@@ -74,30 +82,24 @@ def generar_reporte(html):
             celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
             
             if len(celdas) >= 6:
-                vuelo_raw = celdas[1]
-                origen_raw = celdas[2]
-                fecha = celdas[3]
-                hora = celdas[4]
-                cinta_raw = celdas[5]
-                estado_raw = celdas[6].upper() if len(celdas) > 6 else "PROGRAMADO"
+                vuelo_raw = celdas
+                origen_raw = celdas
+                fecha = celdas
+                hora = celdas
+                cinta_raw = celdas
+                estado_raw = celdas.upper() if len(celdas) > 6 else "PROGRAMADO"
 
                 digitos = "".join(filter(str.isdigit, vuelo_raw))
                 if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
                     continue
 
-                # 🕵️‍♂️ FILTRO ULTRAESTRICTO 1 CONTRA SALIDAS:
-                # Si la columna de la cinta contiene formato de hora (tiene dos puntos ":"), es un despegue. 
-                # Los arribos reales usan números limpios (1, 2) o dicen "Por confirmar".
                 if ":" in cinta_raw:
                     continue
 
-                # 🕵️‍♂️ FILTRO ULTRAESTRICTO 2 CONTRA SALIDAS:
-                # Si por error el sitio web dice que el origen es LA SERENA, sabemos que está despegando.
                 origen = origen_raw.upper()
                 if "SERENA" in origen:
                     continue
 
-                # 🖼️ Identificación real de Aerolínea basada en las imágenes oficiales de la fila
                 img_tag = fila.find("img")
                 src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
                 
@@ -148,7 +150,6 @@ def generar_reporte(html):
     if not llegadas:
         contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
     else:
-        # Ordenamiento cronológico doble estricto (Año-Mes-Día + Hora de menor a mayor)
         llegadas_ordenadas = sorted(
             llegadas,
             key=lambda x: ("-".join(x["sort_fecha"].split("-")[::-1]), x["sort_hora"])
