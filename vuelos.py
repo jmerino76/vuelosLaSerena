@@ -133,10 +133,13 @@ def generar_reporte(html):
 
                     if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "FIN"]):
                         estado = "🟢 Aterrizó"
+                    elif any(x in estado_raw for x in ["CANCELADO", "CANCEL", "🔴 CANCELADO"]):
+                        estado = "❌ Cancelado"
                     elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
                         estado = "🔴 Retrasado"
                     else:
                         estado = "⚪ Programado"
+
 
                     datos_vuelo = {
                         "aerolinea": aerolinea,
