@@ -24,13 +24,13 @@ def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
 
     vuelos_payload = []
     for v in llegadas:
-        # 🌐 ASIGNACIÓN DE ENLACES ABSOLUTOS: Enviamos las URL reales de internet exclusivas para Google Sheets
+        # 🌐 ASIGNACIÓN DE ENLACES PÚBLICOS GLOBALES: Exclusivo para que Google Sheets dibuje las imágenes sin bloqueos de privacidad
         if v["aerolinea_raw_text"] == "Sky":
-            logo_url = "https://githubusercontent.com"
+            logo_url = "https://wikimedia.org"
         elif v["aerolinea_raw_text"] == "JetSmart":
-            logo_url = "https://githubusercontent.com"
+            logo_url = "https://wikimedia.org"
         elif v["aerolinea_raw_text"] == "LATAM":
-            logo_url = "https://githubusercontent.com"
+            logo_url = "https://wikimedia.org"
         else:
             logo_url = ""
 
@@ -89,7 +89,6 @@ def generar_reporte(html):
                 celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
                 if len(celdas) >= 6:
-                    # 🛠️ CORRECCIÓN: Asignamos el índice de texto correspondiente para cada columna
                     vuelo_raw = celdas[1]
                     origen_raw = celdas[2]
                     fecha = celdas[3]
@@ -116,7 +115,7 @@ def generar_reporte(html):
                     is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or digitos == "321"
                     is_latam = "atam" in src_lower or "la" in vuelo_raw.lower()
                     
-                    # 💻 PORTADA LOCAL GITHUB: El Markdown del repositorio mantiene las rutas relativas estables
+                    # 💻 PORTADA LOCAL GITHUB: El Markdown del repositorio mantiene las rutas relativas estables y rápidas
                     if is_sky:
                         aerolinea = '<img src="SKY.jpg" width="70" alt="Sky">'
                         vuelo_num = f"H2 {digitos}"
