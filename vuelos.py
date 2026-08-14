@@ -16,7 +16,7 @@ def obtener_vuelos_oficiales():
         print(f"Error al conectar con el Aeropuerto de La Serena: {e}")
         return None
 
-def enviar_a_google_sheets(llegadas, ahora_local):
+def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
     google_url = os.environ.get("GOOGLE_SHEETS_URL")
     if not google_url:
         print("Aviso: No se encontró GOOGLE_SHEETS_URL. Saltando vuelco a Google.")
@@ -24,19 +24,9 @@ def enviar_a_google_sheets(llegadas, ahora_local):
 
     vuelos_payload = []
     for v in llegadas:
-        if "Sky" in v["aerolinea_raw_text"] or "H2" in v["vuelo"]:
-            logo_url = "https://google.com"
-            linea_txt = "Sky"
-        elif "JetSmart" in v["aerolinea_raw_text"] or "JA" in v["vuelo"]:
-            logo_url = "https://google.com"
-            linea_txt = "JetSmart"
-        else:
-            logo_url = "https://google.com"
-            linea_txt = "LATAM"
-
         vuelos_payload.append({
-            "logo_url": logo_url,
-            "aerolinea_nombre": linea_txt,
+            "logo_url": "https://google.com",
+            "aerolinea_nombre": v["aerolinea_raw_text"],
             "vuelo": v["vuelo"],
             "origen": v["origen"],
             "fecha": v["fecha"],
@@ -48,7 +38,8 @@ def enviar_a_google_sheets(llegadas, ahora_local):
     paquete_completo = {
         "metadata": {
             "titulo": "✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)",
-            "actualizacion": f"Última actualización del reporte: {ahora_local} (Hora Local Chile)"
+            "actualizacion": f"Última actualización del reporte: {ahora_local} (Hora Local Chile)",
+            "total_vuelos_hoy": total_hoy
         },
         "vuelos": vuelos_payload
     }
@@ -67,10 +58,10 @@ def generar_reporte(html):
     ahora_dt = datetime.datetime.now(zona_chile)
     ahora_local = ahora_dt.strftime("%Y-%m-%d %H:%M:%S")
     
+    hora_actual_cl = ahora_dt.hour
+    fecha_hoy_cl = ahora_dt.strftime("%d-%m-%Y")
+    
     contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)\n\n"
-    contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
-    contenido += "| Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |\n"
-    contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
     
     llegadas = []
     llegadas_ordenadas = []
@@ -88,6 +79,7 @@ def generar_reporte(html):
                 celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
                 if len(celdas) >= 6:
+                    # 🛠️ CORRECCIÓN: Asignamos el índice correspondiente de la celda
                     vuelo_raw = celdas[1]
                     origen_raw = celdas[2]
                     fecha = celdas[3]
@@ -108,26 +100,30 @@ def generar_reporte(html):
 
                     img_tag = fila.find("img")
                     src_lower = img_tag["src"].lower() if img_tag and img_tag.get("src") else ""
+                    alt_text = img_tag["alt"].strip() if img_tag and img_tag.get("alt") else ""
                     
                     is_sky = "sky" in src_lower or "h2" in vuelo_raw.lower() or digitos in ["1720", "1723", "1742"]
                     is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or digitos == "321"
+                    is_latam = "atam" in src_lower or "la" in vuelo_raw.lower()
                     
-                    aerolinea_raw_text = "LATAM"
+                    # 🛠️ CORRECCIÓN: Usamos rutas relativas directas de GitHub que no fallan con el proxy
                     if is_sky:
-                        logo_static_url = "https://google.com"
-                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **Sky**'
+                        aerolinea = '<img src="SKY.jpg" width="70" alt="Sky">'
                         vuelo_num = f"H2 {digitos}"
                         aerolinea_raw_text = "Sky"
                     elif is_jetsmart:
-                        logo_static_url = "https://google.com"
-                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **JetSmart**'
+                        aerolinea = '<img src="JetSmart.jpg" width="70" alt="JetSmart">'
                         vuelo_num = f"JA {digitos}"
                         aerolinea_raw_text = "JetSmart"
-                    else:
-                        logo_static_url = "https://google.com"
-                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **LATAM**'
+                    elif is_latam:
+                        aerolinea = '<img src="LATAM.jpg" width="70" alt="LATAM">'
                         vuelo_num = f"LA {digitos}"
                         aerolinea_raw_text = "LATAM"
+                    else:
+                        aerolinea_nombre = alt_text if alt_text else "Otra Aerolínea"
+                        aerolinea = f"**{aerolinea_nombre}**"
+                        vuelo_num = vuelo_raw.upper()
+                        aerolinea_raw_text = aerolinea_nombre
 
                     cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
 
@@ -139,7 +135,6 @@ def generar_reporte(html):
                         estado = "🔴 Retrasado"
                     else:
                         estado = "⚪ Programado"
-
 
                     datos_vuelo = {
                         "aerolinea": aerolinea,
@@ -159,6 +154,20 @@ def generar_reporte(html):
                     vistos.add(clave_vuelo)
                     llegadas.append(datos_vuelo)
 
+    # 📊 FILTRO Y CONTADOR CRONOLÓGICO CONDICIONAL (05:00 a 08:59 AM Chile)
+    if 5 <= hora_actual_cl <= 8:
+        vuelos_hoy = [v for v in llegadas if v["fecha"] == fecha_hoy_cl]
+        total_vuelos_hoy = len(vuelos_hoy)
+        resumen_estadistico = f"### 📊 Resumen Estadístico Diario:\n* **Vuelos totales programados para hoy ({fecha_hoy_cl}):** `{total_vuelos_hoy}`\n\n"
+    else:
+        total_vuelos_hoy = "No disponible fuera de horario"
+        resumen_estadistico = ""
+
+    contenido += resumen_estadistico  
+    contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
+    contenido += "| Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |\n"
+    contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
+    
     if not llegadas:
         contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
     else:
@@ -172,20 +181,16 @@ def generar_reporte(html):
 
     contenido += f"\n\n*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*"
 
-    # 1. Escritura del archivo README.md principal (Portada)
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
         
-    # 2. 📂 CREACIÓN DEL HISTORIAL AUTOMÁTICO
-    # Creamos la carpeta 'historial' si no existe
     os.makedirs("historial", exist_ok=True)
-    # Formateamos el nombre del archivo con año, mes, día, hora y minuto (Ej: arribos_2026-07-28_18-40.md)
     nombre_historial = ahora_dt.strftime("historial/arribos_%Y-%m-%d_%H-%M.md")
     with open(nombre_historial, "w", encoding="utf-8") as archivo_historial:
         archivo_historial.write(contenido)
     print(f"Copia histórica guardada en: {nombre_historial}")
         
-    enviar_a_google_sheets(llegadas_ordenadas, ahora_local)
+    enviar_a_google_sheets(llegadas_ordenadas, ahora_local, total_vuelos_hoy)
 
 if __name__ == "__main__":
     html_data = obtener_vuelos_oficiales()
