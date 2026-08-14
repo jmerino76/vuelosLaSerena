@@ -113,21 +113,28 @@ def generar_reporte(html):
                     is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or digitos == "321"
                     
                     aerolinea_raw_text = "LATAM"
+                                        # Usamos etiquetas HTML con la URL web directa a tus archivos JPG en producción
                     if is_sky:
-                        logo_static_url = "https://google.com"
-                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **Sky**'
+                        logo_url = "https://githubusercontent.com"
+                        aerolinea = f'<img src="{logo_url}" width="70" alt="Sky">'
                         vuelo_num = f"H2 {digitos}"
                         aerolinea_raw_text = "Sky"
                     elif is_jetsmart:
-                        logo_static_url = "https://google.com"
-                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **JetSmart**'
+                        logo_url = "https://githubusercontent.com"
+                        aerolinea = f'<img src="{logo_url}" width="70" alt="JetSmart">'
                         vuelo_num = f"JA {digitos}"
                         aerolinea_raw_text = "JetSmart"
-                    else:
-                        logo_static_url = "https://google.com"
-                        aerolinea = f'<img src="{logo_static_url}" width="16" height="16"> **LATAM**'
+                    elif is_latam:
+                        logo_url = "https://githubusercontent.com"
+                        aerolinea = f'<img src="{logo_url}" width="70" alt="LATAM">'
                         vuelo_num = f"LA {digitos}"
                         aerolinea_raw_text = "LATAM"
+                    else:
+                        aerolinea_nombre = alt_text if alt_text else "Otra Aerolínea"
+                        aerolinea = f"**{aerolinea_nombre}**"
+                        vuelo_num = vuelo_raw.upper()
+                        aerolinea_raw_text = aerolinea_nombre
+
 
                     cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
 
