@@ -1,7 +1,7 @@
 import os
 import datetime
 import requests
-from bs4 import BeautifulSoup 
+from bs4 import BeautifulSoup
 
 def obtener_vuelos_oficiales():
 url = "https://aeropuertolaserena.cl"
@@ -14,13 +14,13 @@ response.raise_for_status()
 return response.text
 except requests.exceptions.RequestException as e:
 print(f"Error al conectar con el Aeropuerto de La Serena: {e}")
-return None 
+return None
 
 def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
 google_url = os.environ.get("GOOGLE_SHEETS_URL")
 if not google_url:
 print("Aviso: No se encontró GOOGLE_SHEETS_URL. Saltando vuelco a Google.")
-return 
+return
 
 vuelos_payload = []
 for v in llegadas:
@@ -56,7 +56,7 @@ print(f"Error al enviar datos a Google Sheets: {e}")
 def generar_reporte(html):
 zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
 ahora_dt = datetime.datetime.now(zona_chile)
-ahora_local = ahora_dt.strftime("%Y-%m-%d %H:%M:%S") 
+ahora_local = ahora_dt.strftime("%Y-%m-%d %H:%M:%S")
 
 hora_actual_cl = ahora_dt.hour
 fecha_hoy_cl = ahora_dt.strftime("%d-%m-%Y")
@@ -162,12 +162,12 @@ total_vuelos_hoy = len(vuelos_hoy)
 resumen_estadistico = f"### 📊 Resumen Estadístico Diario:\n* **Vuelos totales programados para hoy ({fecha_hoy_cl}):** {total_vuelos_hoy}\n\n"
 else:
 total_vuelos_hoy = "No disponible fuera de horario"
-resumen_estadistico = "" 
+resumen_estadistico = ""
 
 contenido += resumen_estadistico
 contenido += f"Última actualización del reporte: {ahora_local} (Hora Local Chile)\n\n"
 contenido += "| Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |\n"
-contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n" 
+contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
 
 if not llegadas:
 contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
@@ -175,16 +175,16 @@ else:
 llegadas_ordenadas = sorted(
 llegadas,
 key=lambda x: ("-".join(x["sort_fecha"].split("-")[::-1]), x["sort_hora"])
-) 
+)
 
 for v in llegadas_ordenadas:
 contenido += f"| {v['aerolinea']} | **{v['vuelo']}** | {v['origen']} | {v['fecha']} | {v['hora']} | {v['cinta']} | {v['estado']} |\n"
-contenido += f"\n\n*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*" 
+contenido += f"\n\n*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*"
 
 ### 1. Escritura del archivo README.md principal (Portada)
 
 with open("README.md", "w", encoding="utf-8") as archivo:
-archivo.write(contenido) 
+archivo.write(contenido)
 
 # 2. 📂 CREACIÓN DEL HISTORIAL AUTOMÁTICO
 
