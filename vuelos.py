@@ -89,11 +89,12 @@ def generar_reporte(html):
                 celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
                 if len(celdas) >= 6:
-                    vuelo_raw = celdas
-                    origen_raw = celdas
-                    fecha = celdas
-                    hora = celdas
-                    cinta_raw = celdas
+                    # 🛠️ CORRECCIÓN: Asignamos el índice de texto correspondiente para cada columna
+                    vuelo_raw = celdas[1]
+                    origen_raw = celdas[2]
+                    fecha = celdas[3]
+                    hora = celdas[4]
+                    cinta_raw = celdas[5]
                     estado_raw = celdas[-1].upper() if len(celdas) >= 6 else "PROGRAMADO"
 
                     digitos = "".join(filter(str.isdigit, vuelo_raw))
