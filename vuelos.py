@@ -14,13 +14,13 @@ response.raise_for_status()
 return response.text
 except requests.exceptions.RequestException as e:
 print(f"Error al conectar con el Aeropuerto de La Serena: {e}")
-return None 
+return None
 
 def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
 google_url = os.environ.get("GOOGLE_SHEETS_URL")
 if not google_url:
 print("Aviso: No se encontró GOOGLE_SHEETS_URL. Saltando vuelco a Google.")
-return 
+return
 
 vuelos_payload = []
 for v in llegadas:
@@ -56,7 +56,7 @@ print(f"Error al enviar datos a Google Sheets: {e}")
 def generar_reporte(html):
 zona_chile = datetime.timezone(datetime.timedelta(hours=-4))
 ahora_dt = datetime.datetime.now(zona_chile)
-ahora_local = ahora_dt.strftime("%Y-%m-%d %H:%M:%S") 
+ahora_local = ahora_dt.strftime("%Y-%m-%d %H:%M:%S")
 
 hora_actual_cl = ahora_dt.hour
 fecha_hoy_cl = ahora_dt.strftime("%d-%m-%Y")
@@ -128,7 +128,7 @@ aerolinea = f"**{aerolinea_nombre}**"
 vuelo_num = vuelo_raw.upper()
 aerolinea_raw_text = aerolinea_nombre
 
-cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar" 
+cinta = f"🧳 {cinta_raw}" if (cinta_raw and cinta_raw != "-") else "Por confirmar"
 
 if any(x in estado_raw for x in ["ATERRIZO", "LANDED", "FIN"]):
 estado = "🟢 Aterrizó"
@@ -137,7 +137,7 @@ estado = "❌ Cancelado"
 elif any(x in estado_raw for x in ["RETRASADO", "DEMORADO", "🔴"]):
 estado = "🔴 Retrasado"
 else:
-estado = "⚪ Programado" 
+estado = "⚪ Programado"
 
 datos_vuelo = {
 "aerolinea": aerolinea,
@@ -150,12 +150,12 @@ datos_vuelo = {
 "estado": estado,
 "sort_fecha": fecha,
 "sort_hora": hora
-} 
+}
 
 clave_vuelo = f"{vuelo_num}-{fecha}-{hora}"
 if clave_vuelo in vistos: continue
 vistos.add(clave_vuelo)
-llegadas.append(datos_vuelo) 
+llegadas.append(datos_vuelo)
 
 # 📊 FILTRO Y CONTADOR CRONOLÓGICO CONDICIONAL (05:00 a 08:59 AM Chile)
 
