@@ -24,8 +24,18 @@ def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
 
     vuelos_payload = []
     for v in llegadas:
+        # 🛠️ CORRECCIÓN: Asignamos la URL web real y absoluta de cada logo para Google Sheets
+        if v["aerolinea_raw_text"] == "Sky":
+            logo_url = "https://githubusercontent.com"
+        elif v["aerolinea_raw_text"] == "JetSmart":
+            logo_url = "https://githubusercontent.com"
+        elif v["aerolinea_raw_text"] == "LATAM":
+            logo_url = "https://githubusercontent.com"
+        else:
+            logo_url = "" # Si es otra aerolínea, no enviamos logo por defecto
+
         vuelos_payload.append({
-            "logo_url": "https://google.com",
+            "logo_url": logo_url,
             "aerolinea_nombre": v["aerolinea_raw_text"],
             "vuelo": v["vuelo"],
             "origen": v["origen"],
