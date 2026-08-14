@@ -106,18 +106,18 @@ def generar_reporte(html):
                     is_latam = "atam" in src_lower or "la" in vuelo_raw.lower()
                     
                     if is_sky:
-                        aerolinea = '<img src="./SKY.jpg" width="70" alt="Sky">'
+                        aerolinea = '<img src="SKY.jpg" width="70" alt="Sky">'
                         vuelo_num = f"H2 {digitos}"
                         aerolinea_raw_text = "Sky"
                     elif is_jetsmart:
-                        aerolinea = '<img src="./JetSmart.jpg" width="70" alt="JetSmart">'
+                        aerolinea = '<img src="JetSmart.jpg" width="70" alt="JetSmart">'
                         vuelo_num = f"JA {digitos}"
                         aerolinea_raw_text = "JetSmart"
                     elif is_latam:
-                        aerolinea = '<img src="./LATAM.jpg" width="70" alt="LATAM">'
+                        aerolinea = '<img src="LATAM.jpg" width="70" alt="LATAM">'
                         vuelo_num = f"LA {digitos}"
                         aerolinea_raw_text = "LATAM"
-                   else:
+                    else:
                         aerolinea_nombre = alt_text if alt_text else "Otra Aerolínea"
                         aerolinea = f"**{aerolinea_nombre}**"
                         vuelo_num = vuelo_raw.upper()
