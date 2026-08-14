@@ -16,7 +16,7 @@ def obtener_vuelos_oficiales():
         print(f"Error al conectar con el Aeropuerto de La Serena: {e}")
         return None
 
-def enviar_a_google_sheets(llegadas, ahora_local):
+def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
     google_url = os.environ.get("GOOGLE_SHEETS_URL")
     if not google_url:
         print("Aviso: No se encontró GOOGLE_SHEETS_URL. Saltando vuelco a Google.")
@@ -48,7 +48,8 @@ def enviar_a_google_sheets(llegadas, ahora_local):
     paquete_completo = {
         "metadata": {
             "titulo": "✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)",
-            "actualizacion": f"Última actualización del reporte: {ahora_local} (Hora Local Chile)"
+            "actualizacion": f"Última actualización del reporte: {ahora_local} (Hora Local Chile)",
+            "total_vuelos_hoy": total_hoy  # Se envía el número exacto o "No disponible"
         },
         "vuelos": vuelos_payload
     }
@@ -67,10 +68,9 @@ def generar_reporte(html):
     ahora_dt = datetime.datetime.now(zona_chile)
     ahora_local = ahora_dt.strftime("%Y-%m-%d %H:%M:%S")
     
-    contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)\n\n"
-    contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
-    contenido += "| Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |\n"
-    contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
+    # ⏱️ Extraemos la hora de Chile (0 a 23) y la fecha de hoy (DD-MM-YYYY)
+    hora_actual_cl = ahora_dt.hour
+    fecha_hoy_cl = ahora_dt.strftime("%d-%m-%Y")
     
     llegadas = []
     llegadas_ordenadas = []
@@ -140,7 +140,6 @@ def generar_reporte(html):
                     else:
                         estado = "⚪ Programado"
 
-
                     datos_vuelo = {
                         "aerolinea": aerolinea,
                         "aerolinea_raw_text": aerolinea_raw_text,
@@ -159,6 +158,22 @@ def generar_reporte(html):
                     vistos.add(clave_vuelo)
                     llegadas.append(datos_vuelo)
 
+    # 📊 FILTRO Y CONTADOR CRONOLÓGICO CONDICIONAL (05:00 a 08:59 AM Chile)
+    if 5 <= hora_actual_cl <= 8:
+        vuelos_hoy = [v for v in llegadas if v["fecha"] == fecha_hoy_cl]
+        total_vuelos_hoy = len(vuelos_hoy)
+        resumen_estadistico = f"### 📊 Resumen Estadístico Diario:\n* **Vuelos totales programados para hoy ({fecha_hoy_cl}):** `{total_vuelos_hoy}`\n\n"
+    else:
+        total_vuelos_hoy = "No disponible fuera de horario"
+        resumen_estadistico = ""
+
+    # Estructura del Markdown
+    contenido = f"# ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)\n\n"
+    contenido += resumen_estadistico  
+    contenido += f"Última actualización del reporte: `{ahora_local} (Hora Local Chile)`\n\n"
+    contenido += "| Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |\n"
+    contenido += "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
+    
     if not llegadas:
         contenido += "| - | - | No hay arribos registrados en este momento | - | - | - | - |\n"
     else:
@@ -172,20 +187,18 @@ def generar_reporte(html):
 
     contenido += f"\n\n*Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*"
 
-    # 1. Escritura del archivo README.md principal (Portada)
+    # 1. Escritura del archivo README.md principal
     with open("README.md", "w", encoding="utf-8") as archivo:
         archivo.write(contenido)
         
-    # 2. 📂 CREACIÓN DEL HISTORIAL AUTOMÁTICO
-    # Creamos la carpeta 'historial' si no existe
+    # 2. 📂 Creación del historial automático
     os.makedirs("historial", exist_ok=True)
-    # Formateamos el nombre del archivo con año, mes, día, hora y minuto (Ej: arribos_2026-07-28_18-40.md)
     nombre_historial = ahora_dt.strftime("historial/arribos_%Y-%m-%d_%H-%M.md")
     with open(nombre_historial, "w", encoding="utf-8") as archivo_historial:
         archivo_historial.write(contenido)
     print(f"Copia histórica guardada en: {nombre_historial}")
         
-    enviar_a_google_sheets(llegadas_ordenadas, ahora_local)
+    enviar_a_google_sheets(llegadas_ordenadas, ahora_local, total_vuelos_hoy)
 
 if __name__ == "__main__":
     html_data = obtener_vuelos_oficiales()
