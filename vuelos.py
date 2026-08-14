@@ -24,7 +24,7 @@ def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
 
     vuelos_payload = []
     for v in llegadas:
-        # 🛠️ CORRECCIÓN: Asignamos la URL web real y absoluta de cada logo para Google Sheets
+        # 🌐 ASIGNACIÓN DE ENLACES ABSOLUTOS: Enviamos las URL reales de internet exclusivas para Google Sheets
         if v["aerolinea_raw_text"] == "Sky":
             logo_url = "https://githubusercontent.com"
         elif v["aerolinea_raw_text"] == "JetSmart":
@@ -32,7 +32,7 @@ def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
         elif v["aerolinea_raw_text"] == "LATAM":
             logo_url = "https://githubusercontent.com"
         else:
-            logo_url = "" # Si es otra aerolínea, no enviamos logo por defecto
+            logo_url = ""
 
         vuelos_payload.append({
             "logo_url": logo_url,
@@ -89,11 +89,11 @@ def generar_reporte(html):
                 celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
                 if len(celdas) >= 6:
-                    vuelo_raw = celdas[1]
-                    origen_raw = celdas[2]
-                    fecha = celdas[3]
-                    hora = celdas[4]
-                    cinta_raw = celdas[5]
+                    vuelo_raw = celdas
+                    origen_raw = celdas
+                    fecha = celdas
+                    hora = celdas
+                    cinta_raw = celdas
                     estado_raw = celdas[-1].upper() if len(celdas) >= 6 else "PROGRAMADO"
 
                     digitos = "".join(filter(str.isdigit, vuelo_raw))
@@ -115,6 +115,7 @@ def generar_reporte(html):
                     is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or digitos == "321"
                     is_latam = "atam" in src_lower or "la" in vuelo_raw.lower()
                     
+                    # 💻 PORTADA LOCAL GITHUB: El Markdown del repositorio mantiene las rutas relativas estables
                     if is_sky:
                         aerolinea = '<img src="SKY.jpg" width="70" alt="Sky">'
                         vuelo_num = f"H2 {digitos}"
