@@ -79,6 +79,7 @@ def generar_reporte(html):
                 celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
                 if len(celdas) >= 6:
+                    # 🛠️ CORRECCIÓN: Asignamos el índice correspondiente de la celda
                     vuelo_raw = celdas[1]
                     origen_raw = celdas[2]
                     fecha = celdas[3]
@@ -105,19 +106,17 @@ def generar_reporte(html):
                     is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or digitos == "321"
                     is_latam = "atam" in src_lower or "la" in vuelo_raw.lower()
                     
+                    # 🛠️ CORRECCIÓN: Usamos rutas relativas directas de GitHub que no fallan con el proxy
                     if is_sky:
-                        logo_url = "https://githubusercontent.com"
-                        aerolinea = f'<img src="{logo_url}" width="70" alt="Sky">'
+                        aerolinea = '<img src="SKY.jpg" width="70" alt="Sky">'
                         vuelo_num = f"H2 {digitos}"
                         aerolinea_raw_text = "Sky"
                     elif is_jetsmart:
-                        logo_url = "https://githubusercontent.com"
-                        aerolinea = f'<img src="{logo_url}" width="70" alt="JetSmart">'
+                        aerolinea = '<img src="JetSmart.jpg" width="70" alt="JetSmart">'
                         vuelo_num = f"JA {digitos}"
                         aerolinea_raw_text = "JetSmart"
                     elif is_latam:
-                        logo_url = "https://githubusercontent.com"
-                        aerolinea = f'<img src="{logo_url}" width="70" alt="LATAM">'
+                        aerolinea = '<img src="LATAM.jpg" width="70" alt="LATAM">'
                         vuelo_num = f"LA {digitos}"
                         aerolinea_raw_text = "LATAM"
                     else:
