@@ -1,7 +1,7 @@
 import os
 import datetime
 import requests
-from bs4 import BeautifulSoup 
+from bs4 import BeautifulSoup
 
 def obtener_vuelos_oficiales():
 url = "https://aeropuertolaserena.cl"
