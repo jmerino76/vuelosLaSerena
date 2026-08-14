@@ -24,7 +24,7 @@ def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
 
     vuelos_payload = []
     for v in llegadas:
-        # Asignación de enlaces públicos de Wikimedia estables exclusivos para que Google Sheets dibuje sin bloqueos
+        # Asignación de enlaces de Wikimedia estables exclusivos para que Google Sheets dibuje sin bloqueos
         if v["aerolinea_raw_text"] == "Sky":
             logo_url = "https://wikimedia.org"
         elif v["aerolinea_raw_text"] == "JetSmart":
@@ -34,6 +34,7 @@ def enviar_a_google_sheets(llegadas, ahora_local, total_hoy):
         else:
             logo_url = ""
 
+        # 🛠️ CORRECCIÓN CLAVE: Empaquetamos 'aerolinea_nombre' EXACTAMENTE como lo pide tu Google Apps Script
         vuelos_payload.append({
             "logo_url": logo_url,
             "aerolinea_nombre": v["aerolinea_raw_text"],
@@ -88,14 +89,13 @@ def generar_reporte(html):
             for fila in tabla.find_all("tr"):
                 celdas = [c.get_text(strip=True) for c in fila.find_all("td")]
                 
-                # Arreglo estricto de índices posicionales para extraer los strings de texto
                 if len(celdas) >= 6:
                     vuelo_raw = celdas[1]
                     origen_raw = celdas[2]
                     fecha = celdas[3]
                     hora = celdas[4]
                     cinta_raw = celdas[5]
-                    estado_raw = celdas[-1].upper() if len(celdas) >= 7 else "PROGRAMADO"
+                    estado_raw = celdas[-1].upper() if len(celdas) >= 6 else "PROGRAMADO"
 
                     digitos = "".join(filter(str.isdigit, vuelo_raw))
                     if not digitos or "TAXIS" in vuelo_raw.upper() or len(vuelo_raw) > 10:
@@ -116,7 +116,7 @@ def generar_reporte(html):
                     is_jetsmart = "smart" in src_lower or "ja" in vuelo_raw.lower() or digitos == "321"
                     is_latam = "atam" in src_lower or "la" in vuelo_raw.lower()
                     
-                    # Interfaz gráfica local para el README.md de GitHub
+                    # Portada local del README.md en GitHub (Mantiene las imágenes JPG)
                     if is_sky:
                         aerolinea = '<img src="SKY.jpg" width="70" alt="Sky">'
                         vuelo_num = f"H2 {digitos}"
@@ -164,7 +164,7 @@ def generar_reporte(html):
                     vistos.add(clave_vuelo)
                     llegadas.append(datos_vuelo)
 
-    # Filtro del contador de vuelos diarios (05:00 a 08:59 AM de Chile)
+    # Conteo Diario Matutino (05:00 a 08:59 AM Chile)
     if 5 <= hora_actual_cl <= 8:
         vuelos_hoy = [v for v in llegadas if v["fecha"] == fecha_hoy_cl]
         total_vuelos_hoy = len(vuelos_hoy)
