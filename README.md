@@ -1,14 +1,10 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-10-14 04:25:20 (Hora Local Chile)`
+Última actualización del reporte: `2026-10-14 10:21:09 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 100** | SANTIAGO | 14-10-2026 | 07:11 | 🧳 2 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 613** | IQUIQUE | 14-10-2026 | 08:55 | 🧳 1 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 137** | CALAMA | 14-10-2026 | 09:27 | 🧳 2 | ⚪ Programado |
-| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1747** | CALAMA | 14-10-2026 | 10:27 | 🧳 1 | ⚪ Programado |
-| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1720** | SANTIAGO | 14-10-2026 | 10:47 | 🧳 2 | ⚪ Programado |
+| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1720** | SANTIAGO | 14-10-2026 | 10:35 | 🧳 2 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 133** | CALAMA | 14-10-2026 | 11:58 | 🧳 1 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 106** | SANTIAGO | 14-10-2026 | 12:25 | 🧳 2 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 610** | SANTIAGO | 14-10-2026 | 12:42 | 🧳 1 | ⚪ Programado |
