@@ -1,17 +1,10 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-### 📊 Resumen Estadístico Diario:
-* **Vuelos totales programados para hoy (15-10-2026):** `17`
-
-Última actualización del reporte: `2026-10-15 06:55:36 (Hora Local Chile)`
+Última actualización del reporte: `2026-10-15 12:23:25 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 613** | IQUIQUE | 15-10-2026 | 08:50 | 🧳 2 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 668** | CONCEPCION (CCP) | 15-10-2026 | 09:18 | 🧳 1 | ⚪ Programado |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 318** | SANTIAGO | 15-10-2026 | 10:08 | 🧳 2 | ⚪ Programado |
-| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 200** | SANTIAGO | 15-10-2026 | 10:29 | 🧳 1 | ⚪ Programado |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 106** | SANTIAGO | 15-10-2026 | 12:01 | 🧳 2 | ⚪ Programado |
+| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 200** | SANTIAGO | 15-10-2026 | 12:44 | 🧳 1 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 669** | CALAMA | 15-10-2026 | 13:35 | 🧳 1 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 395** | CALAMA | 15-10-2026 | 14:51 | 🧳 2 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 367** | ANTOFAGASTA | 15-10-2026 | 15:07 | 🧳 1 | ⚪ Programado |
