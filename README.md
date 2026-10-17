@@ -1,14 +1,14 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-10-17 11:02:13 (Hora Local Chile)`
+Última actualización del reporte: `2026-10-17 16:11:47 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 395** | CALAMA | 17-10-2026 | 12:14 | 🧳 2 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 666** | CONCEPCION (CCP) | 17-10-2026 | 12:43 | 🧳 1 | ⚪ Programado |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 104** | SANTIAGO | 17-10-2026 | 14:48 | 🧳 2 | ⚪ Programado |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 108** | SANTIAGO | 17-10-2026 | 17:01 | 🧳 1 | ⚪ Programado |
+| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 108** | SANTIAGO | 17-10-2026 | 16:38 | 🧳 1 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 667** | ARICA | 17-10-2026 | 18:05 | 🧳 2 | ⚪ Programado |
+| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 664** | CONCEPCION (CCP) | 18-10-2026 | 08:51 | 🧳 2 | ⚪ Programado |
+| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 143** | ANTOFAGASTA | 18-10-2026 | 09:11 | 🧳 1 | ⚪ Programado |
+| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 611** | IQUIQUE | 18-10-2026 | 10:15 | 🧳 2 | ⚪ Programado |
 
 
 *Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*
