@@ -1,14 +1,10 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-10-20 14:56:05 (Hora Local Chile)`
+Última actualización del reporte: `2026-10-20 19:38:04 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1744** | SANTIAGO | 20-10-2026 | 15:22 | 🧳 1 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 610** | SANTIAGO | 20-10-2026 | 17:11 | 🧳 2 | ⚪ Programado |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 320** | SANTIAGO | 20-10-2026 | 17:34 | 🧳 1 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 139** | CALAMA | 20-10-2026 | 19:39 | 🧳 2 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 325** | ANTOFAGASTA | 20-10-2026 | 20:03 | 🧳 1 | ⚪ Programado |
+| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 325** | ANTOFAGASTA | 20-10-2026 | 19:57 | 🧳 1 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 322** | SANTIAGO | 20-10-2026 | 21:46 | 🧳 2 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 100** | SANTIAGO | 21-10-2026 | 07:11 | 🧳 1 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 137** | CALAMA | 21-10-2026 | 08:24 | 🧳 2 | ⚪ Programado |
