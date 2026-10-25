@@ -1,12 +1,10 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-10-24 18:54:40 (Hora Local Chile)`
+Última actualización del reporte: `2026-10-24 23:24:01 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 664** | CONCEPCION (CCP) | 25-10-2026 | 08:51 | 🧳 2 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 611** | IQUIQUE | 25-10-2026 | 10:15 | 🧳 1 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 143** | ANTOFAGASTA | 25-10-2026 | 10:35 | 🧳 2 | ⚪ Programado |
+| - | - | No hay arribos registrados en este momento | - | - | - | - |
 
 
 *Datos de arribos exclusivos ordenados cronológicamente y validados desde el portal oficial del [Aeropuerto La Florida de La Serena](https://aeropuertolaserena.cl).*
