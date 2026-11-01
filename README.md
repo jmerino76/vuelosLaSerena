@@ -1,10 +1,13 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-11-01 00:38:02 (Hora Local Chile)`
+### 📊 Resumen Estadístico Diario:
+* **Vuelos totales programados para hoy (01-11-2026):** `16`
+
+Última actualización del reporte: `2026-11-01 08:44:14 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 100** | SANTIAGO | 01-11-2026 | 09:22 | 🧳 1 | ⚪ Programado |
+| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 100** | SANTIAGO | 01-11-2026 | 09:08 | 🧳 1 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 321** | ANTOFAGASTA | 01-11-2026 | 11:20 | 🧳 2 | ⚪ Programado |
 | <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1744** | SANTIAGO | 01-11-2026 | 11:32 | 🧳 1 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 102** | SANTIAGO | 01-11-2026 | 12:47 | 🧳 2 | ⚪ Programado |
