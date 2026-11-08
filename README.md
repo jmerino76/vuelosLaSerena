@@ -1,12 +1,15 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-11-08 00:41:17 (Hora Local Chile)`
+### 📊 Resumen Estadístico Diario:
+* **Vuelos totales programados para hoy (08-11-2026):** `19`
+
+Última actualización del reporte: `2026-11-08 08:49:47 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 100** | SANTIAGO | 08-11-2026 | 09:22 | 🧳 2 | ⚪ Programado |
+| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 100** | SANTIAGO | 08-11-2026 | 09:18 | 🧳 2 | ⚪ Programado |
+| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1744** | SANTIAGO | 08-11-2026 | 09:24 | 🧳 2 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 321** | ANTOFAGASTA | 08-11-2026 | 11:20 | 🧳 1 | ⚪ Programado |
-| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1744** | SANTIAGO | 08-11-2026 | 12:22 | 🧳 2 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 102** | SANTIAGO | 08-11-2026 | 12:51 | 🧳 1 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 611** | IQUIQUE | 08-11-2026 | 13:33 | 🧳 2 | ⚪ Programado |
 | <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1743** | CALAMA | 08-11-2026 | 13:45 | 🧳 1 | ⚪ Programado |
