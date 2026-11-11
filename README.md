@@ -1,17 +1,14 @@
 # ✈️ Cronograma de Arribos Diarios - La Serena (SCSE / LSC)
 
-Última actualización del reporte: `2026-11-11 00:53:38 (Hora Local Chile)`
+Última actualización del reporte: `2026-11-11 09:38:37 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 1245** | ANTOFAGASTA | 11-11-2026 | 04:57 | 🧳 2 | ⚪ Programado |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 100** | SANTIAGO | 11-11-2026 | 07:09 | 🧳 1 | ⚪ Programado |
-| <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 149** | ANTOFAGASTA | 11-11-2026 | 09:20 | 🧳 2 | ⚪ Programado |
-| **AEROLÍNEA** | **542** | SANTIAGO | 11-11-2026 | 10:25 | 🧳 2 | ⚪ Programado |
-| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1747** | CALAMA | 11-11-2026 | 10:25 | 🧳 1 | ⚪ Programado |
-| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1720** | SANTIAGO | 11-11-2026 | 10:45 | 🧳 1 | ⚪ Programado |
-| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 102** | SANTIAGO | 11-11-2026 | 12:12 | 🧳 1 | ⚪ Programado |
+| **AEROLÍNEA** | **542** | SANTIAGO | 11-11-2026 | 10:00 | 🧳 2 | ⚪ Programado |
+| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1747** | CALAMA | 11-11-2026 | 10:18 | 🧳 1 | ⚪ Programado |
+| <img src="SKY.jpg" width="70" alt="Sky"> | **H2 1720** | SANTIAGO | 11-11-2026 | 10:28 | 🧳 1 | ⚪ Programado |
 | <img src="JetSmart.jpg" width="70" alt="JetSmart"> | **JA 133** | CALAMA | 11-11-2026 | 12:12 | 🧳 2 | ⚪ Programado |
+| <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 102** | SANTIAGO | 11-11-2026 | 12:12 | 🧳 1 | ⚪ Programado |
 | <img src="SKY.jpg" width="70" alt="Sky"> | **H2 3012** | SANTIAGO | 11-11-2026 | 14:31 | 🧳 2 | ⚪ Programado |
 | <img src="SKY.jpg" width="70" alt="Sky"> | **H2 3014** | SANTIAGO | 11-11-2026 | 14:51 | 🧳 1 | ⚪ Programado |
 | <img src="LATAM.jpg" width="70" alt="LATAM"> | **LA 104** | SANTIAGO | 11-11-2026 | 15:11 | 🧳 2 | ⚪ Programado |
