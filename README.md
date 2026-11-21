@@ -3,7 +3,7 @@
 ### 📊 Resumen Estadístico Diario:
 * **Vuelos totales programados para hoy (21-11-2026):** `8`
 
-Última actualización del reporte: `2026-11-21 06:40:33 (Hora Local Chile)`
+Última actualización del reporte: `2026-11-21 06:41:54 (Hora Local Chile)`
 
 | Aerolínea | Vuelo | Origen | Fecha | Hora Real/Est. | Cinta | Estado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
